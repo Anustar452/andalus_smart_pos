@@ -10,6 +10,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\StockMovementController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -48,6 +49,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('transactions/{transaction}/refund', [TransactionController::class, 'refund']);
     Route::get('transactions/daily-summary', [TransactionController::class, 'dailySummary']);
     Route::get('transactions/{transaction}/verify-payment', [PaymentController::class, 'verifyPayment']);
+
+    // Stock Movements
+    Route::apiResource('stock-movements', StockMovementController::class)->only(['index', 'show']);
+    Route::get('products/{product}/stock-movements', [StockMovementController::class, 'productMovements']);
+    Route::get('reports/stock', [StockMovementController::class, 'stockReport']);
 
     // Reports
     Route::prefix('reports')->group(function () {

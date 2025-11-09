@@ -1,0 +1,12 @@
+targets:
+  $default:
+    builders:
+      freezed:
+        options:
+          # Configure freezed options if needed
+      json_serializable:
+        options:
+          # Configure json_serializable options if needed
+      retrofit_generator:
+        options:
+          # Configure retrofit options if needed

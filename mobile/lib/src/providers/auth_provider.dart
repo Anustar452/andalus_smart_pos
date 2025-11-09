@@ -1,39 +1,97 @@
-// mobile/lib/src/providers/auth_provider.dart
+import 'package:andalus_smart_pos/src/data/local/database.dart';
+import 'package:andalus_smart_pos/src/service/auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:andalus_smart_pos/src/data/models/user.dart';
+// import 'package:andalus_smart_pos/src/services/auth_service.dart';
+import 'package:andalus_smart_pos/src/data/repositories/user_repository.dart';
+import 'package:andalus_smart_pos/src/data/repositories/otp_repository.dart';
+import 'package:andalus_smart_pos/src/data/repositories/subscription_repository.dart';
 
-import '../models/user.dart';
-import '../services/api_service.dart';
+// Providers - Fixed to not pass any arguments
+final userRepositoryProvider = Provider<UserRepository>((ref) {
+  return UserRepository(AppDatabase());
+});
 
-final authProvider = StateNotifierProvider<AuthNotifier, AsyncValue<User?>>(
-  (ref) => AuthNotifier(ref),
-);
+final otpRepositoryProvider = Provider<OTPRepository>((ref) {
+  return OTPRepository();
+});
 
-class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
-  final Ref ref;
+final subscriptionRepositoryProvider = Provider<SubscriptionRepository>((ref) {
+  return SubscriptionRepository();
+});
 
-  AuthNotifier(this.ref) : super(const AsyncValue.data(null));
+final authServiceProvider = Provider<AuthService>((ref) {
+  return AuthService(
+    userRepository: ref.read(userRepositoryProvider),
+    otpRepository: ref.read(otpRepositoryProvider),
+    subscriptionRepository: ref.read(subscriptionRepositoryProvider),
+  );
+});
 
-  Future<void> login(String email, String password, String deviceName) async {
-    state = const AsyncValue.loading();
+// Auth State
+class AuthState {
+  final User? user;
+  final bool isLoading;
+  final String? error;
+  final bool isAuthenticated;
+
+  const AuthState({
+    this.user,
+    this.isLoading = false,
+    this.error,
+  }) : isAuthenticated = user != null;
+
+  AuthState copyWith({
+    User? user,
+    bool? isLoading,
+    String? error,
+  }) {
+    return AuthState(
+      user: user ?? this.user,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
+}
+
+class AuthNotifier extends StateNotifier<AuthState> {
+  final Ref _ref;
+
+  AuthNotifier(this._ref) : super(const AuthState());
+
+  Future<void> sendOTP(String phone) async {
+    state = state.copyWith(isLoading: true, error: null);
     try {
-      final response = await ref
-          .read(apiServiceProvider)
-          .login(email: email, password: password, deviceName: deviceName);
-
-      // Store token
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', response['token']);
-
-      state = AsyncValue.data(User.fromJson(response['user']));
+      final authService = _ref.read(authServiceProvider);
+      await authService.sendLoginOTP(phone);
+      state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
     }
   }
 
-  Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    state = const AsyncValue.data(null);
+  Future<void> verifyOTPAndLogin(String phone, String code) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final authService = _ref.read(authServiceProvider);
+      final user = await authService.verifyOTPAndLogin(phone, code);
+      state = state.copyWith(user: user, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
+    }
+  }
+
+  void logout() {
+    state = const AuthState();
+  }
+
+  void clearError() {
+    state = state.copyWith(error: null);
   }
 }
+
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  return AuthNotifier(ref);
+});
