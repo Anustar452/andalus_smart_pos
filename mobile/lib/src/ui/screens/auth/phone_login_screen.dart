@@ -1,3 +1,4 @@
+//src/ui/screens/auth/phone_login_screen.dart
 import 'package:andalus_smart_pos/src/ui/screens/auth/registration_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

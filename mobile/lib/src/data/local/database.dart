@@ -152,27 +152,26 @@ class AppDatabase {
 
     // Enhanced subscription table with ALL columns
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS subscriptions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        subscription_id TEXT UNIQUE NOT NULL,
-        business_id TEXT NOT NULL,
-        user_id TEXT NOT NULL,
-        plan TEXT NOT NULL,
-        billing_cycle TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'active',
-        amount REAL NOT NULL,
-        start_date INTEGER NOT NULL,
-        end_date INTEGER NOT NULL,
-        is_active INTEGER DEFAULT 1,
-        currency TEXT DEFAULT 'ETB',
-        payment_reference TEXT,
-        created_at INTEGER NOT NULL,
-        currency TEXT,
-        updated_at INTEGER NOT NULL,
-        FOREIGN KEY (business_id) REFERENCES business_profile (business_id),
-        FOREIGN KEY (user_id) REFERENCES users (user_id)
-      )
-    ''');
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      subscription_id TEXT UNIQUE NOT NULL,
+      business_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      plan TEXT NOT NULL,
+      billing_cycle TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT "active",
+      amount REAL NOT NULL,
+      start_date INTEGER NOT NULL,
+      end_date INTEGER NOT NULL,
+      is_active INTEGER DEFAULT 1,
+      currency TEXT DEFAULT 'ETB',
+      payment_reference TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (business_id) REFERENCES business_profile (business_id),
+      FOREIGN KEY (user_id) REFERENCES users (user_id)
+    )
+  ''');
 
     print('User management tables created successfully');
   }

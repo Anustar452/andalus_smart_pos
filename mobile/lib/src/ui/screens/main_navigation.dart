@@ -1,4 +1,3 @@
-import 'package:andalus_smart_pos/src/ui/screens/account/account_management_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/localization/app_localizations.dart';
@@ -8,7 +7,7 @@ import 'sales_history_screen.dart';
 import 'customer_management_screen.dart';
 import 'product_management_screen.dart';
 import 'category_management_screen.dart';
-import 'settings_screen.dart';
+import 'package:andalus_smart_pos/src/ui/screens/account_settings_screen.dart';
 
 class MainNavigation extends ConsumerStatefulWidget {
   const MainNavigation({super.key});
@@ -31,8 +30,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
       const CustomerManagementScreen(),
       const ProductManagementScreen(),
       const CategoryManagementScreen(),
-      const AccountManagementScreen(),
-      const SettingsScreen(),
+      const AccountSettingsScreen(), // Use the combined screen
     ];
 
     final List<BottomNavigationBarItem> navItems = [
@@ -67,14 +65,9 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
         label: localizations.categories,
       ),
       BottomNavigationBarItem(
-        icon: const Icon(Icons.account_circle_outlined),
-        activeIcon: const Icon(Icons.account_circle),
-        label: localizations.account,
-      ),
-      BottomNavigationBarItem(
         icon: const Icon(Icons.settings_outlined),
         activeIcon: const Icon(Icons.settings),
-        label: localizations.settings,
+        label: localizations.settings, // Now this shows both account & settings
       ),
     ];
 
