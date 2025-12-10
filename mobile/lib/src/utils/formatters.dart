@@ -1,3 +1,4 @@
+// lib/src/utils/formatters.dart
 import 'package:intl/intl.dart';
 
 class AppFormatters {

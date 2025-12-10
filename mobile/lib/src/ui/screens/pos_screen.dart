@@ -876,8 +876,8 @@ class _PosScreenState extends ConsumerState<PosScreen> {
       // Convert cart items to sale items
       final saleItems = cart
           .map((cartItem) => SaleItem(
-                saleId: 0,
-                productId: cartItem.productId,
+                saleId: "0",
+                productId: cartItem.productId as String,
                 productName: cartItem.productName,
                 quantity: cartItem.quantity,
                 unitPrice: cartItem.unitPrice,
@@ -962,11 +962,11 @@ class _PosScreenState extends ConsumerState<PosScreen> {
           .toList();
 
       final subtotal = ref.read(cartProvider.notifier).subtotalAmount;
-
+// In your pos_screen.dart, update the printReceipt call:
       final success = await PrintService.printReceipt(
         context: context,
         shopName: 'Andalus Smart POS',
-        shopNameAm: 'አንዳሉስ ማርቲን ፖስ',
+        shopNameAm: 'አንዳሉስ ስማርት ፖስ',
         address: 'Addis Ababa, Ethiopia',
         phone: '+251911223344',
         tinNumber: '1234567890',
@@ -981,8 +981,24 @@ class _PosScreenState extends ConsumerState<PosScreen> {
         telebirrRef: paymentMethod == 'telebirr'
             ? 'TEL${DateTime.now().millisecondsSinceEpoch}'
             : null,
+        sale: Sale(
+          saleId: 'REC-$saleId',
+          localId: 'local_${DateTime.now().millisecondsSinceEpoch}',
+          totalAmount: total,
+          finalAmount: total,
+          paymentMethod: paymentMethod,
+          userId: 1,
+          shopId: 1,
+          createdAt: DateTime.now(),
+        ), // Add sale parameter
+        businessInfo: {
+          'shopName': 'Andalus Smart POS',
+          'shopNameAm': 'አንዳሉስ ስማርት ፖስ',
+          'address': 'Addis Ababa, Ethiopia',
+          'phone': '+251911223344',
+          'tinNumber': '1234567890',
+        }, // Add businessInfo parameter
       );
-
       return success;
     } catch (e) {
       print('Printing error: $e');

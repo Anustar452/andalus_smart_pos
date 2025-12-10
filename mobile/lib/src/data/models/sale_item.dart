@@ -1,36 +1,100 @@
+//lib/src/data/models/sale_item.dart
 class SaleItem {
   final int? id;
-  final int saleId;
-  final int productId;
+  final String saleId;
+  final String productId;
   final String productName;
+  final String? productNameAm;
   final int quantity;
   final double unitPrice;
   final double totalPrice;
-  final DateTime? createdAt;
+  final double? costPrice;
+  final double discount;
+  final String? barcode;
+  final String? unit;
+  final DateTime createdAt;
+  final bool isSynced;
 
   SaleItem({
     this.id,
     required this.saleId,
     required this.productId,
     required this.productName,
+    this.productNameAm,
     required this.quantity,
     required this.unitPrice,
     required this.totalPrice,
-    this.createdAt,
-  });
+    this.costPrice,
+    this.discount = 0,
+    this.barcode,
+    this.unit,
+    required this.createdAt,
+    this.isSynced = false,
+  })  : assert(quantity > 0, 'Quantity must be positive: $quantity'),
+        assert(unitPrice >= 0, 'Unit price cannot be negative: $unitPrice'),
+        assert(totalPrice >= 0, 'Total price cannot be negative: $totalPrice');
 
-  // Helper to update quantity
-  SaleItem copyWith({int? quantity, required int saleId}) {
-    final newQuantity = quantity ?? this.quantity;
+  SaleItem copyWith({
+    int? id,
+    String? saleId,
+    String? productId,
+    String? productName,
+    String? productNameAm,
+    int? quantity,
+    double? unitPrice,
+    double? totalPrice,
+    double? costPrice,
+    double? discount,
+    String? barcode,
+    String? unit,
+    DateTime? createdAt,
+    bool? isSynced,
+  }) {
     return SaleItem(
-      id: id,
+      id: id ?? this.id,
+      saleId: saleId ?? this.saleId,
+      productId: productId ?? this.productId,
+      productName: productName ?? this.productName,
+      productNameAm: productNameAm ?? this.productNameAm,
+      quantity: quantity ?? this.quantity,
+      unitPrice: unitPrice ?? this.unitPrice,
+      totalPrice: totalPrice ?? this.totalPrice,
+      costPrice: costPrice ?? this.costPrice,
+      discount: discount ?? this.discount,
+      barcode: barcode ?? this.barcode,
+      unit: unit ?? this.unit,
+      createdAt: createdAt ?? this.createdAt,
+      isSynced: isSynced ?? this.isSynced,
+    );
+  }
+
+  factory SaleItem.create({
+    required String saleId,
+    required String productId,
+    required String productName,
+    String? productNameAm,
+    required int quantity,
+    required double unitPrice,
+    double? costPrice,
+    double discount = 0,
+    String? barcode,
+    String? unit,
+  }) {
+    final totalPrice = (unitPrice * quantity) - discount;
+
+    return SaleItem(
       saleId: saleId,
       productId: productId,
       productName: productName,
-      quantity: newQuantity,
+      productNameAm: productNameAm,
+      quantity: quantity,
       unitPrice: unitPrice,
-      totalPrice: unitPrice * newQuantity,
-      createdAt: createdAt,
+      totalPrice: totalPrice,
+      costPrice: costPrice,
+      discount: discount,
+      barcode: barcode,
+      unit: unit,
+      createdAt: DateTime.now(),
     );
   }
 
@@ -40,11 +104,16 @@ class SaleItem {
       'sale_id': saleId,
       'product_id': productId,
       'product_name': productName,
+      'product_name_am': productNameAm,
       'quantity': quantity,
       'unit_price': unitPrice,
       'total_price': totalPrice,
-      'created_at': createdAt?.millisecondsSinceEpoch ??
-          DateTime.now().millisecondsSinceEpoch,
+      'cost_price': costPrice,
+      'discount': discount,
+      'barcode': barcode,
+      'unit': unit,
+      'created_at': createdAt.millisecondsSinceEpoch,
+      'is_synced': isSynced ? 1 : 0,
     };
   }
 
@@ -54,15 +123,24 @@ class SaleItem {
       saleId: map['sale_id'],
       productId: map['product_id'],
       productName: map['product_name'],
+      productNameAm: map['product_name_am'],
       quantity: map['quantity'],
       unitPrice: map['unit_price'],
       totalPrice: map['total_price'],
-      createdAt: map['created_at'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['created_at'])
-          : null,
+      costPrice: map['cost_price'],
+      discount: map['discount'] ?? 0,
+      barcode: map['barcode'],
+      unit: map['unit'],
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at']),
+      isSynced: map['is_synced'] == 1,
     );
   }
 
+  double get profit {
+    if (costPrice == null) return 0;
+    return totalPrice - (costPrice! * quantity);
+  }
+
   String get formattedUnitPrice => 'ETB ${unitPrice.toStringAsFixed(2)}';
-  String get formattedTotalPrice => 'ETB ${totalPrice.toStringAsFixed(2)}';
+  String get formattedTotal => 'ETB ${totalPrice.toStringAsFixed(2)}';
 }

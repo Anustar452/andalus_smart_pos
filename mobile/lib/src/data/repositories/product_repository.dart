@@ -1,3 +1,4 @@
+// lib/src/data/repositories/product_repository.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
 import '../local/database.dart';
@@ -49,15 +50,15 @@ class ProductRepository {
     }
   }
 
-  Future<Product?> getProductById(int id) async {
+  Future<Product?> getProductById(String productId) async {
     final db = await _db;
     try {
       final maps = await db.rawQuery('''
         SELECT p.*, c.name as category_name 
         FROM $productTable p 
         LEFT JOIN product_categories c ON p.category_id = c.category_id 
-        WHERE p.id = ?
-      ''', [id]);
+        WHERE p.product_id = ?
+      ''', [productId]);
 
       if (maps.isNotEmpty) {
         return Product.fromMap(maps.first);
@@ -65,6 +66,36 @@ class ProductRepository {
       return null;
     } catch (e) {
       print('Error in getProductById: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateStockAfterSale({
+    required String productId,
+    required int quantitySold,
+  }) async {
+    final db = await _db;
+    try {
+      // Get current product
+      final product = await getProductById(productId);
+      if (product != null && product.trackInventory) {
+        final newStock = product.stockQuantity - quantitySold;
+        if (newStock >= 0) {
+          await db.update(
+            productTable,
+            {
+              'stock_quantity': newStock,
+              'updated_at': DateTime.now().millisecondsSinceEpoch,
+            },
+            where: 'product_id = ?',
+            whereArgs: [productId],
+          );
+        } else {
+          throw Exception('Insufficient stock for product $productId');
+        }
+      }
+    } catch (e) {
+      print('Error in updateStockAfterSale: $e');
       rethrow;
     }
   }
@@ -82,6 +113,52 @@ class ProductRepository {
       return maps.map((map) => Product.fromMap(map)).toList();
     } catch (e) {
       print('Error in getProductsByCategory: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateStockAfterRefund({
+    required String productId,
+    required int quantityRefunded,
+  }) async {
+    final db = await _db;
+    try {
+      // Get current product
+      final product = await getProductById(productId);
+      if (product != null && product.trackInventory) {
+        final newStock = product.stockQuantity + quantityRefunded;
+        await db.update(
+          productTable,
+          {
+            'stock_quantity': newStock,
+            'updated_at': DateTime.now().millisecondsSinceEpoch,
+          },
+          where: 'product_id = ?',
+          whereArgs: [productId],
+        );
+      }
+    } catch (e) {
+      print('Error in updateStockAfterRefund: $e');
+      rethrow;
+    }
+  }
+
+  Future<Product?> getProductByIntId(int id) async {
+    final db = await _db;
+    try {
+      final maps = await db.rawQuery('''
+        SELECT p.*, c.name as category_name 
+        FROM $productTable p 
+        LEFT JOIN product_categories c ON p.category_id = c.category_id 
+        WHERE p.id = ?
+      ''', [id]);
+
+      if (maps.isNotEmpty) {
+        return Product.fromMap(maps.first);
+      }
+      return null;
+    } catch (e) {
+      print('Error in getProductByIntId: $e');
       rethrow;
     }
   }

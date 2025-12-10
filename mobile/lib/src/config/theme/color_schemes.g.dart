@@ -1,3 +1,4 @@
+//lib/src/config/theme/color_schemes.g.dart
 import 'package:flutter/material.dart';
 
 const lightColorScheme = ColorScheme(

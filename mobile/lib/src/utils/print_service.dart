@@ -1,7 +1,9 @@
-// utils/print_service.dart
+// lib/src/utils/print_service.dart
+import 'package:andalus_smart_pos/src/data/models/sale.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:esc_pos_utils/esc_pos_utils.dart';
 import '../localization/app_localizations.dart';
 import '../utils/formatters.dart';
@@ -9,6 +11,9 @@ import '../utils/formatters.dart';
 class PrintService {
   static BluetoothDevice? _connectedDevice;
   static BluetoothCharacteristic? _printCharacteristic;
+  final printServiceProvider = Provider<PrintService>((ref) {
+    return PrintService();
+  });
 
   // Scan for Bluetooth printers
   static Stream<List<BluetoothDevice>> scanForPrinters() {
@@ -89,6 +94,8 @@ class PrintService {
     required double total,
     required String paymentMethod,
     String? telebirrRef,
+    required Sale sale,
+    required Map<String, String> businessInfo,
   }) async {
     if (_printCharacteristic == null) {
       _showError(context, 'No printer connected');

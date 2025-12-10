@@ -1,4 +1,4 @@
-//lib/src
+//lib/src/ui/screens/dashboard_screen.dart
 import 'package:andalus_smart_pos/src/data/models/customer.dart';
 import 'package:andalus_smart_pos/src/providers/language_provider.dart';
 import 'package:andalus_smart_pos/src/ui/screens/customer_management_screen.dart';

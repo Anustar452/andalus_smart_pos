@@ -361,24 +361,72 @@ class CustomerRepository {
 
   Future<List<Customer>> getAllCustomers({bool activeOnly = true}) async {
     final db = await _db;
-    final where = activeOnly ? 'WHERE is_active = 1' : '';
-    final maps = await db.rawQuery('''
-      SELECT * FROM $customerTable $where ORDER BY name
-    ''');
-    return maps.map((map) => Customer.fromMap(map)).toList();
+    try {
+      final where = activeOnly ? 'WHERE is_active = 1' : '';
+      final maps = await db.rawQuery('''
+        SELECT * FROM $customerTable 
+        $where 
+        ORDER BY name
+      ''');
+      return maps.map((map) => Customer.fromMap(map)).toList();
+    } catch (e) {
+      print('Error in getAllCustomers: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateCustomerBalance({
+    required int customerId,
+    required double amount,
+    required String transactionType,
+    required String reference,
+  }) async {
+    final db = await _db;
+    try {
+      await db.transaction((txn) async {
+        // Update customer balance
+        await txn.rawUpdate('''
+          UPDATE $customerTable 
+          SET current_balance = current_balance + ?, 
+              updated_at = ?
+          WHERE id = ?
+        ''', [amount, DateTime.now().millisecondsSinceEpoch, customerId]);
+
+        // Record transaction
+        await txn.insert(creditTransactionTable, {
+          'local_id': 'CREDIT_${DateTime.now().millisecondsSinceEpoch}',
+          'customer_id': customerId,
+          'customer_name': 'Customer $customerId', // Should fetch actual name
+          'type': transactionType,
+          'amount': amount,
+          'balance_before': 0, // Should fetch actual balance
+          'balance_after': amount,
+          'reference': reference,
+          'created_at': DateTime.now().millisecondsSinceEpoch,
+        });
+      });
+    } catch (e) {
+      print('Error in updateCustomerBalance: $e');
+      rethrow;
+    }
   }
 
   Future<Customer?> getCustomerById(int id) async {
     final db = await _db;
-    final maps = await db.query(
-      customerTable,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    if (maps.isNotEmpty) {
-      return Customer.fromMap(maps.first);
+    try {
+      final maps = await db.query(
+        customerTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      if (maps.isNotEmpty) {
+        return Customer.fromMap(maps.first);
+      }
+      return null;
+    } catch (e) {
+      print('Error in getCustomerById: $e');
+      rethrow;
     }
-    return null;
   }
 
   Future<List<Customer>> getCustomersWithBalance() async {

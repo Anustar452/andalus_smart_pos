@@ -1,6 +1,8 @@
-import 'dart:ui';
-
+// lib/src/data/models/product.dart
+import 'dart:convert';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:crypto/crypto.dart';
 
 class Product {
   final int? id;
@@ -27,6 +29,8 @@ class Product {
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
+  late final String checksum; // For data integrity
+  final int version; // For optimistic locking
 
   Product({
     this.id,
@@ -34,11 +38,11 @@ class Product {
     required this.name,
     required this.nameAm,
     this.description,
-    required this.price,
+    required double price,
     this.costPrice,
-    required this.stockQuantity,
-    this.minStockLevel,
-    required this.barcode,
+    required int stockQuantity,
+    int? minStockLevel,
+    required String barcode,
     this.sku,
     required this.categoryId,
     this.categoryName,
@@ -53,8 +57,171 @@ class Product {
     this.isActive = true,
     required this.createdAt,
     required this.updatedAt,
-  });
+    this.checksum = '',
+    this.version = 1,
+  })  : price = _validatePrice(price),
+        stockQuantity = _validateStock(stockQuantity),
+        barcode = _validateBarcode(barcode),
+        minStockLevel = _validateMinStock(minStockLevel) {
+    // Generate checksum
+    checksum = _generateChecksum();
+  }
 
+  // === VALIDATION METHODS ===
+  static double _validatePrice(double price) {
+    if (price < 0) throw ArgumentError('Price cannot be negative: $price');
+    if (price > 10000000) {
+      throw ArgumentError('Price exceeds maximum allowed: $price');
+    }
+    return double.parse(price.toStringAsFixed(2)); // Round to 2 decimals
+  }
+
+  static int _validateStock(int stock) {
+    if (stock < 0) throw ArgumentError('Stock cannot be negative: $stock');
+    if (stock > 1000000)
+      throw ArgumentError('Stock exceeds maximum allowed: $stock');
+    return stock;
+  }
+
+  static String _validateBarcode(String barcode) {
+    if (barcode.isEmpty) throw ArgumentError('Barcode cannot be empty');
+    barcode = barcode.trim();
+
+    // Validate common barcode formats
+    final validFormats = [
+      RegExp(r'^[0-9]{12,13}$'), // EAN-13, UPC-A
+      RegExp(r'^[0-9]{8}$'), // EAN-8
+      RegExp(r'^[0-9]{14}$'), // GTIN-14
+    ];
+
+    final isValid = validFormats.any((regex) => regex.hasMatch(barcode));
+    if (!isValid) {
+      throw ArgumentError('Invalid barcode format: $barcode');
+    }
+
+    return barcode;
+  }
+
+  static int? _validateMinStock(int? minStock) {
+    if (minStock != null) {
+      if (minStock < 0)
+        throw ArgumentError('Minimum stock cannot be negative: $minStock');
+      if (minStock > 1000000)
+        throw ArgumentError('Minimum stock exceeds maximum: $minStock');
+    }
+    return minStock;
+  }
+
+  String _generateChecksum() {
+    final data =
+        '$productId$name$nameAm$price$stockQuantity$barcode$categoryId';
+    final bytes = utf8.encode(data);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  bool verifyChecksum() {
+    return checksum == _generateChecksum();
+  }
+
+  // === BUSINESS METHODS ===
+  bool canSellQuantity(int quantity) {
+    if (!trackInventory) return true;
+    if (quantity <= 0) return false;
+    if (quantity > stockQuantity) return false;
+    if (!isActive) return false;
+    return true;
+  }
+
+  Product reduceStock(int quantity) {
+    if (!canSellQuantity(quantity)) {
+      throw StateError(
+          'Cannot sell $quantity of $name. Available: $stockQuantity');
+    }
+
+    return copyWith(
+      stockQuantity: stockQuantity - quantity,
+      version: version + 1,
+    );
+  }
+
+  Product increaseStock(int quantity) {
+    if (quantity <= 0)
+      throw ArgumentError('Quantity must be positive: $quantity');
+
+    return copyWith(
+      stockQuantity: stockQuantity + quantity,
+      version: version + 1,
+    );
+  }
+
+  double getPriceWithTax(double taxRate) {
+    return double.parse((price * (1 + taxRate)).toStringAsFixed(2));
+  }
+
+  double getProfit() {
+    if (costPrice == null) return 0;
+    return double.parse((price - costPrice!).toStringAsFixed(2));
+  }
+
+  double getProfitPercentage() {
+    if (costPrice == null || costPrice == 0) return 0;
+    return double.parse(
+        (((price - costPrice!) / costPrice!) * 100).toStringAsFixed(2));
+  }
+
+  // === COPY WITH METHOD (ENHANCED) ===
+  Product copyWith({
+    String? name,
+    String? nameAm,
+    String? description,
+    double? price,
+    double? costPrice,
+    int? stockQuantity,
+    int? minStockLevel,
+    String? barcode,
+    String? sku,
+    String? categoryId,
+    String? unit,
+    String? brand,
+    String? supplier,
+    double? weight,
+    String? size,
+    String? color,
+    String? imagePath,
+    bool? trackInventory,
+    bool? isActive,
+    int? version,
+  }) {
+    return Product(
+      id: id,
+      productId: productId,
+      name: name ?? this.name,
+      nameAm: nameAm ?? this.nameAm,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      costPrice: costPrice ?? this.costPrice,
+      stockQuantity: stockQuantity ?? this.stockQuantity,
+      minStockLevel: minStockLevel ?? this.minStockLevel,
+      barcode: barcode ?? this.barcode,
+      sku: sku ?? this.sku,
+      categoryId: categoryId ?? this.categoryId,
+      unit: unit ?? this.unit,
+      brand: brand ?? this.brand,
+      supplier: supplier ?? this.supplier,
+      weight: weight ?? this.weight,
+      size: size ?? this.size,
+      color: color ?? this.color,
+      imagePath: imagePath ?? this.imagePath,
+      trackInventory: trackInventory ?? this.trackInventory,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt,
+      updatedAt: DateTime.now(),
+      version: version ?? this.version + 1,
+    );
+  }
+
+  // === TO/FROM MAP ===
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -80,6 +247,8 @@ class Product {
       'is_active': isActive ? 1 : 0,
       'created_at': createdAt.millisecondsSinceEpoch,
       'updated_at': updatedAt.millisecondsSinceEpoch,
+      'checksum': checksum,
+      'version': version,
     };
   }
 
@@ -108,58 +277,12 @@ class Product {
       isActive: map['is_active'] == 1,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at']),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updated_at']),
+      checksum: map['checksum'] ?? '',
+      version: map['version'] ?? 1,
     );
   }
 
-  Product copyWith({
-    String? name,
-    String? nameAm,
-    String? description,
-    double? price,
-    double? costPrice,
-    int? stockQuantity,
-    int? minStockLevel,
-    String? barcode,
-    String? sku,
-    String? categoryId,
-    String? unit,
-    String? brand,
-    String? supplier,
-    double? weight,
-    String? size,
-    String? color,
-    String? imagePath,
-    bool? trackInventory,
-    bool? isActive,
-  }) {
-    return Product(
-      id: id,
-      productId: productId,
-      name: name ?? this.name,
-      nameAm: nameAm ?? this.nameAm,
-      description: description ?? this.description,
-      price: price ?? this.price,
-      costPrice: costPrice ?? this.costPrice,
-      stockQuantity: stockQuantity ?? this.stockQuantity,
-      minStockLevel: minStockLevel ?? this.minStockLevel,
-      barcode: barcode ?? this.barcode,
-      sku: sku ?? this.sku,
-      categoryId: categoryId ?? this.categoryId,
-      unit: unit ?? this.unit,
-      brand: brand ?? this.brand,
-      supplier: supplier ?? this.supplier,
-      weight: weight ?? this.weight,
-      size: size ?? this.size,
-      color: color ?? this.color,
-      imagePath: imagePath ?? this.imagePath,
-      trackInventory: trackInventory ?? this.trackInventory,
-      isActive: isActive ?? this.isActive,
-      createdAt: createdAt,
-      updatedAt: DateTime.now(),
-    );
-  }
-
-  // Helper methods
+  // === HELPER PROPERTIES ===
   String get formattedPrice => 'ETB ${price.toStringAsFixed(2)}';
   String get formattedCostPrice =>
       costPrice != null ? 'ETB ${costPrice!.toStringAsFixed(2)}' : 'N/A';
@@ -168,12 +291,8 @@ class Product {
       trackInventory &&
       minStockLevel != null &&
       stockQuantity <= minStockLevel!;
-  bool get isOutOfStock => trackInventory && stockQuantity <= 0;
 
-  double get profitMargin {
-    if (costPrice == null || costPrice == 0) return 0;
-    return ((price - costPrice!) / costPrice!) * 100;
-  }
+  bool get isOutOfStock => trackInventory && stockQuantity <= 0;
 
   String get stockStatus {
     if (!trackInventory) return 'Not Tracked';
@@ -184,64 +303,58 @@ class Product {
 
   Color get stockStatusColor {
     if (!trackInventory) return Colors.grey;
-    if (isOutOfStock) return Colors.red;
-    if (isLowStock) return Colors.orange;
-    return Colors.green;
+    if (isOutOfStock) return const Color(0xFFEF4444);
+    if (isLowStock) return const Color(0xFFF59E0B);
+    return const Color(0xFF10B981);
   }
 
-  factory Product.createSample() {
+  // === FACTORY METHODS ===
+  factory Product.create({
+    required String name,
+    required String nameAm,
+    required double price,
+    required int stockQuantity,
+    required String barcode,
+    required String categoryId,
+    String? description,
+    double? costPrice,
+    int? minStockLevel,
+    String? unit,
+    String? brand,
+    String? supplier,
+  }) {
     return Product(
-      productId: 'prod_sample_${DateTime.now().millisecondsSinceEpoch}',
-      name: 'Sample Product',
-      nameAm: 'ናሙና ምርት',
-      description: 'This is a sample product for testing',
-      price: 99.99,
-      costPrice: 50.00,
-      stockQuantity: 25,
-      minStockLevel: 10,
-      barcode: '1234567890123',
-      sku: 'SKU-001',
-      categoryId: 'cat_001',
-      unit: 'pcs',
-      brand: 'Sample Brand',
-      supplier: 'Sample Supplier',
-      trackInventory: true,
-      isActive: true,
+      productId: 'PROD_${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      nameAm: nameAm,
+      description: description,
+      price: price,
+      costPrice: costPrice,
+      stockQuantity: stockQuantity,
+      minStockLevel: minStockLevel,
+      barcode: barcode,
+      categoryId: categoryId,
+      unit: unit,
+      brand: brand,
+      supplier: supplier,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
   }
 
-  factory Product.createSampleWithIndex(int index) {
-    final products = [
-      {'name': 'Coca Cola', 'nameAm': 'ኮካ ኮላ', 'price': 25.0, 'stock': 50},
-      {'name': 'Mirinda', 'nameAm': 'ሚሪንዳ', 'price': 25.0, 'stock': 30},
-      {'name': 'Ambo Water', 'nameAm': 'አምቦ ውሃ', 'price': 15.0, 'stock': 100},
-      {'name': 'Biscuit', 'nameAm': 'ብስኩት', 'price': 10.0, 'stock': 75},
-      {'name': 'Bread', 'nameAm': 'ዳቦ', 'price': 20.0, 'stock': 25},
-    ];
-
-    final productData = products[index % products.length];
-
-    return Product(
-      productId: 'prod_sample_${DateTime.now().millisecondsSinceEpoch}_$index',
-      name: productData['name'] as String,
-      nameAm: productData['nameAm'] as String,
-      description: 'Sample product description',
-      price: productData['price'] as double,
-      costPrice: (productData['price'] as double) * 0.6,
-      stockQuantity: productData['stock'] as int,
-      minStockLevel: 10,
-      barcode: '1234567890${index.toString().padLeft(3, '0')}',
-      sku: 'SKU-${index.toString().padLeft(3, '0')}',
-      categoryId: 'cat_${(index % 3 + 1).toString().padLeft(3, '0')}',
-      unit: 'pcs',
-      brand: 'Sample Brand',
-      supplier: 'Sample Supplier',
-      trackInventory: true,
-      isActive: true,
-      createdAt: DateTime.now().subtract(Duration(days: index * 2)),
-      updatedAt: DateTime.now(),
-    );
+  @override
+  String toString() {
+    return 'Product(id: $id, name: $name, price: $price, stock: $stockQuantity, barcode: $barcode)';
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Product &&
+        other.productId == productId &&
+        other.version == version;
+  }
+
+  @override
+  int get hashCode => productId.hashCode ^ version.hashCode;
 }

@@ -1,3 +1,5 @@
+// lib/src/data/repositories/sale_repository.dart
+import 'package:flutter/src/material/date.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
 import '../local/database.dart'; // Import AppDatabase
@@ -110,7 +112,7 @@ class SaleRepository {
       for (final item in items) {
         await txn.insert(
           saleItemTable,
-          item.copyWith(saleId: saleId).toMap(),
+          item.copyWith(saleId: saleId as String).toMap(),
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
@@ -180,7 +182,8 @@ class SaleRepository {
   }
 
   // Get sales summary for dashboard
-  Future<SalesSummary> getSalesSummary() async {
+  Future<SalesSummary> getSalesSummary(
+      {DateTimeRange<DateTime>? dateRange}) async {
     final db = await _db;
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
@@ -218,6 +221,162 @@ class SaleRepository {
         weeklyOrders: 0,
       );
     }
+  }
+
+  Future<List<Sale>> searchSales({
+    String? query,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? paymentMethod,
+    String? status,
+    int? customerId,
+  }) async {
+    final db = await _db;
+
+    List<String> whereConditions = [];
+    List<Object?> whereArgs = [];
+
+    if (query != null && query.isNotEmpty) {
+      whereConditions.add('(sale_id LIKE ? OR customer_name LIKE ?)');
+      whereArgs.addAll(['%$query%', '%$query%']);
+    }
+
+    if (startDate != null) {
+      whereConditions.add('created_at >= ?');
+      whereArgs.add(startDate.millisecondsSinceEpoch);
+    }
+
+    if (endDate != null) {
+      whereConditions.add('created_at <= ?');
+      whereArgs.add(endDate.millisecondsSinceEpoch);
+    }
+
+    if (paymentMethod != null) {
+      whereConditions.add('payment_method = ?');
+      whereArgs.add(paymentMethod);
+    }
+
+    if (status != null) {
+      whereConditions.add('sale_status = ?');
+      whereArgs.add(status);
+    }
+
+    if (customerId != null) {
+      whereConditions.add('customer_id = ?');
+      whereArgs.add(customerId);
+    }
+
+    final whereClause = whereConditions.isNotEmpty
+        ? 'WHERE ${whereConditions.join(' AND ')}'
+        : '';
+
+    final maps = await db.rawQuery('''
+      SELECT * FROM $saleTable 
+      $whereClause 
+      ORDER BY created_at DESC 
+      LIMIT 100
+    ''', whereArgs);
+
+    return maps.map((map) => Sale.fromMap(map)).toList();
+  }
+
+  Future<Sale> refundSale({
+    required int saleId,
+    required String reason,
+    bool fullRefund = true,
+    List<String>? itemIds,
+    Map<String, int>? partialQuantities,
+  }) async {
+    final db = await _db;
+
+    return await db.transaction((txn) async {
+      // Get original sale
+      final saleMaps = await txn.query(
+        saleTable,
+        where: 'id = ?',
+        whereArgs: [saleId],
+      );
+
+      if (saleMaps.isEmpty) {
+        throw Exception('Sale not found');
+      }
+
+      final originalSale = Sale.fromMap(saleMaps.first);
+
+      // Create refund sale
+      final refundSale = Sale(
+        saleId: 'REFUND_${originalSale.saleId}',
+        localId: 'REFUND_LOCAL_${DateTime.now().millisecondsSinceEpoch}',
+        customerId: originalSale.customerId,
+        customerName: originalSale.customerName,
+        totalAmount: originalSale.totalAmount,
+        finalAmount: -originalSale.finalAmount, // Negative amount for refund
+        taxAmount: originalSale.taxAmount,
+        discountAmount: originalSale.discountAmount,
+        paymentMethod: 'refund',
+        paymentReference: 'REFUND_${originalSale.saleId}',
+        paymentStatus: 'refunded',
+        saleStatus: 'refunded',
+        userId: originalSale.userId,
+        userName: originalSale.userName,
+        shopId: originalSale.shopId,
+        isSynced: false,
+        syncAttempts: 0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        notes: 'Refund: $reason',
+        isRefunded: false, // This is the refund record itself
+        refundReason: reason,
+        refundedAt: DateTime.now(),
+      );
+
+      // Save refund sale
+      final refundSaleId = await txn.insert(
+        saleTable,
+        refundSale.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      // Update original sale status
+      await txn.update(
+        saleTable,
+        {
+          'sale_status': 'refunded',
+          'payment_status': 'refunded',
+          'is_refunded': 1,
+          'refund_reason': reason,
+          'refunded_at': DateTime.now().millisecondsSinceEpoch,
+          'updated_at': DateTime.now().millisecondsSinceEpoch,
+        },
+        where: 'id = ?',
+        whereArgs: [saleId],
+      );
+
+      return refundSale.copyWith(id: refundSaleId);
+    });
+  }
+
+  Future<List<SaleItem>> getSaleItems(int saleId) async {
+    final db = await _db;
+    final maps = await db.query(
+      saleItemTable,
+      where: 'sale_id = ?',
+      whereArgs: [saleId],
+    );
+
+    return maps.map((map) => SaleItem.fromMap(map)).toList();
+  }
+
+  Future<Sale?> getSimpleSaleById(int id) async {
+    final db = await _db;
+    final saleMaps = await db.query(
+      saleTable,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (saleMaps.isEmpty) return null;
+    return Sale.fromMap(saleMaps.first);
   }
 
   // Get unsynced sales for synchronization
@@ -262,8 +421,8 @@ class SaleRepository {
     for (final sale in sampleSales) {
       await createSale(sale, [
         SaleItem(
-          saleId: 0,
-          productId: 1,
+          saleId: '0', // Will be replaced with actual sale ID
+          productId: '1',
           productName: 'Coca Cola',
           quantity: 2,
           unitPrice: 25.0,
@@ -297,6 +456,23 @@ class SaleWithItems {
   SaleWithItems({required this.sale, required this.items});
 
   double get totalAmount => items.fold(0, (sum, item) => sum + item.totalPrice);
+}
+
+extension SaleRefundExtension on Sale {
+  bool get canBeRefunded {
+    if (isRefunded) return false;
+    if (saleStatus != 'completed') return false;
+    if (paymentStatus != 'completed') return false;
+
+    // 30-day refund window
+    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+    return createdAt.isAfter(thirtyDaysAgo);
+  }
+}
+
+// Add this extension to SaleWithItems class
+extension SaleWithItemsRefundExtension on SaleWithItems {
+  bool get canBeRefunded => sale.canBeRefunded;
 }
 
 // Sales summary for dashboard
@@ -367,8 +543,8 @@ Future<void> createSampleSales() async {
   for (final sale in sampleSales) {
     await createSale(sale, [
       SaleItem(
-        saleId: 0, // Will be replaced with actual sale ID
-        productId: 1,
+        saleId: '0', // Will be replaced with actual sale ID
+        productId: '1',
         productName: 'Sample Product',
         quantity: 2,
         unitPrice: 25.0,
