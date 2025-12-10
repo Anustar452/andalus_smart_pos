@@ -1,60 +1,80 @@
-import 'package:bluetooth_print/bluetooth_print.dart';
-import 'package:bluetooth_print/bluetooth_print_model.dart';
-import 'package:bluetooth_print/bluetooth_print_model.dart'
-    show LineText, BluetoothDevice;
-
-/// Fallback stub for BluetoothPrint to ensure the symbol is defined during
-/// development if the external package doesn't expose it; remove this stub
-/// once the package provides BluetoothPrint or if it causes duplicate symbol
-/// errors when the real class is available.
-class BluetoothPrint {
-  BluetoothPrint._();
-  static final BluetoothPrint instance = BluetoothPrint._();
-
-  Future<void> startScan({required Duration timeout}) async {}
-  List<BluetoothDevice> get scanResults => <BluetoothDevice>[];
-  Future<bool> connect(BluetoothDevice device) async => false;
-  Future<void> print(List<LineText> data, BluetoothDevice device) async {}
-  Future<void> disconnect() async {}
-}
+// utils/print_service.dart
+import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+// import 'package:esc_pos_utils/esc_pos_utils.dart';
+import '../localization/app_localizations.dart';
+import '../utils/formatters.dart';
 
 class PrintService {
-  static final BluetoothPrint _bluetoothPrint = BluetoothPrint.instance;
   static BluetoothDevice? _connectedDevice;
+  static BluetoothCharacteristic? _printCharacteristic;
 
-  static Future<bool> initialize() async {
-    try {
-      await _bluetoothPrint.startScan(timeout: const Duration(seconds: 10));
-      return true;
-    } catch (e) {
-      print('Bluetooth print initialization error: $e');
-      return false;
-    }
+  // Scan for Bluetooth printers
+  static Stream<List<BluetoothDevice>> scanForPrinters() {
+    return FlutterBluePlus.scanResults.map((results) => results
+        .where((r) => _isPotentialPrinter(r.device))
+        .map((r) => r.device)
+        .toList());
   }
 
-  static Future<List<BluetoothDevice>> getAvailableDevices() async {
-    try {
-      return _bluetoothPrint.scanResults;
-    } catch (e) {
-      print('Error getting devices: $e');
-      return [];
-    }
+  static bool _isPotentialPrinter(BluetoothDevice device) {
+    // Thermal printers often have these in their name
+    final printerNames = [
+      'printer',
+      'print',
+      'pos',
+      'thermal',
+      'bt',
+      'bluetooth'
+    ];
+    return printerNames
+        .any((name) => device.localName.toLowerCase().contains(name));
   }
 
-  static Future<bool> connectToDevice(BluetoothDevice device) async {
+  static Future<void> startScan() async {
+    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
+  }
+
+  static Future<void> stopScan() async {
+    await FlutterBluePlus.stopScan();
+  }
+
+  // Connect to a printer
+  static Future<bool> connectToPrinter(BluetoothDevice device) async {
     try {
-      final connected = await _bluetoothPrint.connect(device);
-      if (connected) {
-        _connectedDevice = device;
+      await device.connect();
+      final services = await device.discoverServices();
+
+      for (var service in services) {
+        for (var characteristic in service.characteristics) {
+          // Look for the characteristic that supports writing (printing)
+          if (characteristic.properties.write) {
+            _printCharacteristic = characteristic;
+            _connectedDevice = device;
+            return true;
+          }
+        }
       }
-      return connected;
+      return false;
     } catch (e) {
       print('Connection error: $e');
       return false;
     }
   }
 
-  static Future<void> printReceipt({
+  // Disconnect from printer
+  static Future<void> disconnect() async {
+    if (_connectedDevice != null) {
+      await _connectedDevice!.disconnect();
+      _connectedDevice = null;
+      _printCharacteristic = null;
+    }
+  }
+
+  // Main print function
+  static Future<bool> printReceipt({
+    required BuildContext context,
     required String shopName,
     required String shopNameAm,
     required String address,
@@ -70,36 +90,44 @@ class PrintService {
     required String paymentMethod,
     String? telebirrRef,
   }) async {
-    if (_connectedDevice == null) {
-      throw Exception('No printer connected');
+    if (_printCharacteristic == null) {
+      _showError(context, 'No printer connected');
+      return false;
     }
 
-    final receiptData = _buildReceiptData(
-      shopName: shopName,
-      shopNameAm: shopNameAm,
-      address: address,
-      phone: phone,
-      tinNumber: tinNumber,
-      receiptNumber: receiptNumber,
-      dateTime: dateTime,
-      items: items,
-      subtotal: subtotal,
-      tax: tax,
-      discount: discount,
-      total: total,
-      paymentMethod: paymentMethod,
-      telebirrRef: telebirrRef,
-    );
-
     try {
-      await _bluetoothPrint.print(receiptData, _connectedDevice!);
+      // Generate ESC/POS commands
+      final bytes = await _generateReceiptBytes(
+        context: context,
+        shopName: shopName,
+        shopNameAm: shopNameAm,
+        address: address,
+        phone: phone,
+        tinNumber: tinNumber,
+        receiptNumber: receiptNumber,
+        dateTime: dateTime,
+        items: items,
+        subtotal: subtotal,
+        tax: tax,
+        discount: discount,
+        total: total,
+        paymentMethod: paymentMethod,
+        telebirrRef: telebirrRef,
+      );
+
+      // Send to printer
+      await _printCharacteristic!.write(bytes, withoutResponse: true);
+
+      _showSuccess(context, 'Receipt printed successfully');
+      return true;
     } catch (e) {
-      print('Printing error: $e');
-      rethrow;
+      _showError(context, 'Printing failed: $e');
+      return false;
     }
   }
 
-  static List<LineText> _buildReceiptData({
+  static Future<List<int>> _generateReceiptBytes({
+    required BuildContext context,
     required String shopName,
     required String shopNameAm,
     required String address,
@@ -114,213 +142,132 @@ class PrintService {
     required double total,
     required String paymentMethod,
     String? telebirrRef,
-  }) {
-    final lines = <LineText>[];
+  }) async {
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm80, profile);
+    List<int> bytes = [];
 
     // Header
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: shopName,
-      weight: 1, // Bold
-      align: LineText.ALIGN_CENTER,
-      size: 24,
-      linefeed: 1,
-    ));
+    bytes += generator.text(shopName,
+        styles: const PosStyles(
+            align: PosAlign.center, bold: true, height: PosTextSize.size2));
+    bytes += generator.text(shopNameAm,
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text(address,
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('Tel: ${AppFormatters.formatPhoneNumber(phone)}',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('TIN: ${AppFormatters.formatTIN(tinNumber)}',
+        styles: const PosStyles(align: PosAlign.center));
 
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: shopNameAm,
-      align: LineText.ALIGN_CENTER,
-      size: 20,
-      linefeed: 1,
-    ));
-
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: address,
-      align: LineText.ALIGN_CENTER,
-      size: 18,
-      linefeed: 1,
-    ));
-
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'Tel: $phone',
-      align: LineText.ALIGN_CENTER,
-      size: 18,
-      linefeed: 1,
-    ));
-
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'TIN: $tinNumber',
-      align: LineText.ALIGN_CENTER,
-      size: 18,
-      linefeed: 1,
-    ));
-
-    // Separator
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: '=' * 32,
-      align: LineText.ALIGN_CENTER,
-      linefeed: 1,
-    ));
+    bytes += generator.hr();
 
     // Receipt info
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'Receipt: $receiptNumber',
-      align: LineText.ALIGN_LEFT,
-      linefeed: 1,
-    ));
+    bytes += generator.text('Receipt: $receiptNumber');
+    bytes += generator.text('Date: ${_formatDate(dateTime)}');
+    bytes += generator.text('Time: ${_formatTime(dateTime)}');
 
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'Date: ${_formatDate(dateTime)}',
-      align: LineText.ALIGN_LEFT,
-      linefeed: 1,
-    ));
-
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'Time: ${_formatTime(dateTime)}',
-      align: LineText.ALIGN_LEFT,
-      linefeed: 1,
-    ));
+    bytes += generator.hr();
 
     // Items header
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: '-' * 32,
-      align: LineText.ALIGN_CENTER,
-      linefeed: 1,
-    ));
+    bytes += generator.row([
+      PosColumn(text: 'Item', width: 8, styles: const PosStyles(bold: true)),
+      PosColumn(text: 'Qty', width: 2, styles: const PosStyles(bold: true)),
+      PosColumn(text: 'Price', width: 4, styles: const PosStyles(bold: true)),
+      PosColumn(text: 'Total', width: 6, styles: const PosStyles(bold: true)),
+    ]);
 
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'Item           Qty  Price  Total',
-      align: LineText.ALIGN_LEFT,
-      linefeed: 1,
-    ));
-
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: '-' * 32,
-      align: LineText.ALIGN_CENTER,
-      linefeed: 1,
-    ));
+    bytes += generator.hr();
 
     // Items
     for (final item in items) {
-      final name = item['name'] as String;
-      final quantity = item['quantity'] as int;
-      final price = item['price'] as double;
-      final itemTotal = item['total'] as double;
+      final name = (item['name'] as String).length > 16
+          ? '${(item['name'] as String).substring(0, 16)}.'
+          : item['name'] as String;
 
-      final truncatedName =
-          name.length > 12 ? '${name.substring(0, 12)}.' : name.padRight(13);
-      final qtyStr = quantity.toString().padLeft(3);
-      final priceStr = price.toStringAsFixed(2).padLeft(6);
-      final totalStr = itemTotal.toStringAsFixed(2).padLeft(7);
-
-      lines.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: '$truncatedName $qtyStr $priceStr $totalStr',
-        align: LineText.ALIGN_LEFT,
-        linefeed: 1,
-      ));
+      bytes += generator.row([
+        PosColumn(text: name, width: 8),
+        PosColumn(text: '${item['quantity']}', width: 2),
+        PosColumn(
+            text: '${(item['price'] as double).toStringAsFixed(2)}', width: 4),
+        PosColumn(
+            text: '${(item['total'] as double).toStringAsFixed(2)}', width: 6),
+      ]);
     }
 
-    // Totals
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: '-' * 32,
-      align: LineText.ALIGN_CENTER,
-      linefeed: 1,
-    ));
+    bytes += generator.hr();
 
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'Subtotal:${' ' * 15}ETB ${subtotal.toStringAsFixed(2)}',
-      align: LineText.ALIGN_LEFT,
-      linefeed: 1,
-    ));
+    // Totals
+    bytes += generator.row([
+      PosColumn(text: 'Subtotal:', width: 10),
+      PosColumn(text: 'ETB ${subtotal.toStringAsFixed(2)}', width: 10),
+    ]);
 
     if (tax > 0) {
-      lines.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Tax:${' ' * 19}ETB ${tax.toStringAsFixed(2)}',
-        align: LineText.ALIGN_LEFT,
-        linefeed: 1,
-      ));
+      bytes += generator.row([
+        PosColumn(text: 'Tax:', width: 10),
+        PosColumn(text: 'ETB ${tax.toStringAsFixed(2)}', width: 10),
+      ]);
     }
 
     if (discount > 0) {
-      lines.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Discount:${' ' * 14}ETB ${discount.toStringAsFixed(2)}',
-        align: LineText.ALIGN_LEFT,
-        linefeed: 1,
-      ));
+      bytes += generator.row([
+        PosColumn(text: 'Discount:', width: 10),
+        PosColumn(text: '-ETB ${discount.toStringAsFixed(2)}', width: 10),
+      ]);
     }
 
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'TOTAL:${' ' * 15}ETB ${total.toStringAsFixed(2)}',
-      weight: 1, // Bold
-      align: LineText.ALIGN_LEFT,
-      linefeed: 1,
-    ));
+    bytes += generator.hr();
+
+    bytes += generator.row([
+      PosColumn(text: 'TOTAL:', width: 10, styles: const PosStyles(bold: true)),
+      PosColumn(
+          text: 'ETB ${total.toStringAsFixed(2)}',
+          width: 10,
+          styles: const PosStyles(bold: true)),
+    ]);
+
+    bytes += generator.hr();
 
     // Payment info
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'Payment: $paymentMethod',
-      align: LineText.ALIGN_LEFT,
-      linefeed: 1,
-    ));
+    bytes += generator.text(
+        'Payment: ${_getPaymentMethodName(paymentMethod, AppLocalizations.of(context))}');
 
     if (telebirrRef != null) {
-      lines.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Telebirr Ref: $telebirrRef',
-        align: LineText.ALIGN_LEFT,
-        linefeed: 1,
-      ));
+      bytes += generator.text('Ref: $telebirrRef');
     }
 
-    // Footer
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: '=' * 32,
-      align: LineText.ALIGN_CENTER,
-      linefeed: 1,
-    ));
+    bytes += generator.text('');
+    bytes += generator.text('Thank you for your business!',
+        styles: const PosStyles(align: PosAlign.center, bold: true));
+    bytes += generator.text('እናመሰግናለን!',
+        styles: const PosStyles(align: PosAlign.center));
 
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'Thank you for your business!',
-      align: LineText.ALIGN_CENTER,
-      linefeed: 1,
-    ));
-
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: 'እናመሰግናለን!',
-      align: LineText.ALIGN_CENTER,
-      linefeed: 2,
-    ));
+    bytes += generator.text('');
+    bytes += generator.text('');
 
     // Cut paper
-    lines.add(LineText(
-      type: LineText.TYPE_TEXT,
-      content: '',
-      align: LineText.ALIGN_LEFT,
-      linefeed: 0,
-    ));
+    bytes += generator.cut();
 
-    return lines;
+    return bytes;
+  }
+
+  static String _getPaymentMethodName(
+      String method, AppLocalizations localizations) {
+    switch (method.toLowerCase()) {
+      case 'cash':
+        return localizations.cash;
+      case 'telebirr':
+        return localizations.telebirr;
+      case 'card':
+        return localizations.card;
+      case 'credit':
+        return localizations.credit;
+      case 'bank_transfer':
+        return localizations.bankTransfer;
+      default:
+        return method;
+    }
   }
 
   static String _formatDate(DateTime date) {
@@ -331,12 +278,27 @@ class PrintService {
     return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  static Future<void> disconnect() async {
-    if (_connectedDevice != null) {
-      await _bluetoothPrint.disconnect();
-      _connectedDevice = null;
-    }
+  static void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
+  static void _showSuccess(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  // Get connection status
   static bool get isConnected => _connectedDevice != null;
+
+  static String get connectedDeviceName =>
+      _connectedDevice?.localName ?? 'No printer connected';
 }

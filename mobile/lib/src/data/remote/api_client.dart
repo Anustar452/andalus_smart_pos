@@ -6,8 +6,6 @@ import 'package:andalus_smart_pos/src/data/models/product.dart';
 import 'package:andalus_smart_pos/src/data/models/sale.dart';
 import 'package:andalus_smart_pos/src/data/models/sale_item.dart';
 
-part 'api_client.g.dart';
-
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(ref);
 });

@@ -1,27 +1,41 @@
+//src/data/repositories/user_repository.dart
 import 'package:andalus_smart_pos/src/data/local/database.dart';
 import 'package:andalus_smart_pos/src/data/models/user.dart';
 
 class UserRepository {
-  UserRepository(AppDatabase appDatabase); // Remove database parameter
+  UserRepository();
 
   Future<User?> getUserByPhone(String phone) async {
-    final db = await AppDatabase.database; // Use AppDatabase directly
-    final result = await db.query(
-      'users',
-      where: 'phone = ? AND is_active = 1',
-      whereArgs: [phone],
-    );
+    final db = await AppDatabase.database;
 
-    if (result.isEmpty) return null;
-    return User.fromMap(result.first);
+    try {
+      final result = await db.query(
+        'users',
+        where: 'phone = ?',
+        whereArgs: [phone],
+      );
+
+      print(
+          'User query result: ${result.length} users found for phone: $phone');
+
+      if (result.isEmpty) return null;
+
+      final user = User.fromMap(result.first);
+      print('User found: ${user.name} (${user.role})');
+
+      return user;
+    } catch (e) {
+      print('Error getting user by phone: $e');
+      return null;
+    }
   }
 
-  Future<User?> getUserById(String id) async {
+  Future<User?> getUserById(String userId) async {
     final db = await AppDatabase.database;
     final result = await db.query(
       'users',
       where: 'user_id = ?',
-      whereArgs: [id],
+      whereArgs: [userId],
     );
 
     if (result.isEmpty) return null;
@@ -54,22 +68,16 @@ class UserRepository {
       where: 'user_id = ?',
       whereArgs: [userId],
     );
-  }
 
-  Future<List<User>> getAllUsers() async {
-    final db = await AppDatabase.database;
-    final result = await db.query('users', orderBy: 'created_at DESC');
-    return result.map((map) => User.fromMap(map)).toList();
+    print('Last login updated for user: $userId');
   }
+}
 
-  Future<List<User>> getUsersByBusiness(String businessId) async {
-    final db = await AppDatabase.database;
-    final result = await db.query(
-      'users',
-      where: 'business_id = ?',
-      whereArgs: [businessId],
-      orderBy: 'created_at DESC',
-    );
-    return result.map((map) => User.fromMap(map)).toList();
-  }
+Future<void> deleteUser(String userId) async {
+  final db = await AppDatabase.database;
+  await db.delete(
+    'users',
+    where: 'user_id = ?',
+    whereArgs: [userId],
+  );
 }

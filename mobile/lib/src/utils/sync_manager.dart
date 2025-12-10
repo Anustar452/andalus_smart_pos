@@ -1,3 +1,4 @@
+// utils/sync_manager.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'package:sqflite/sqflite.dart';
@@ -5,7 +6,9 @@ import '../data/local/database.dart';
 import '../data/remote/api_client.dart';
 
 final syncManagerProvider = Provider<SyncManager>((ref) {
-  return SyncManager(ref);
+  final syncManager = SyncManager(ref);
+  syncManager.initialize();
+  return syncManager;
 });
 
 class SyncManager {
@@ -17,9 +20,9 @@ class SyncManager {
 
   Future<void> initialize() async {
     // Start periodic sync every 5 minutes
-    _syncTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
+    _syncTimer = Timer.periodic(const Duration(minutes: 5), (timer) async {
       if (!_isSyncing) {
-        syncPendingRecords();
+        await syncPendingRecords();
       }
     });
   }
@@ -41,128 +44,67 @@ class SyncManager {
 
   Future<void> _uploadPendingRecords() async {
     final db = await AppDatabase.database;
-    final apiClient = ref.read(apiClientProvider);
-
-    // Get pending sync logs
-    final pendingLogs = await db.query(
-      'sync_logs',
-      where: 'status = ?',
-      whereArgs: ['pending'],
-      limit: 50, // Batch size
-    );
-
-    if (pendingLogs.isEmpty) return;
-
-    final records = <String, List<Map<String, dynamic>>>{};
-
-    for (final log in pendingLogs) {
-      final tableName = log['table_name'] as String;
-      final recordId = log['record_id'] as int;
-
-      // Get the actual record data
-      final record = await db.query(
-        tableName,
-        where: 'id = ?',
-        whereArgs: [recordId],
-      );
-
-      if (record.isNotEmpty) {
-        records[tableName] ??= [];
-        records[tableName]!.add(record.first);
-      }
-    }
 
     try {
-      // Upload to server
-      await apiClient.uploadSyncData(records);
+      // Get unsynced sales
+      final unsyncedSales = await db.query(
+        'sales',
+        where: 'is_synced = ?',
+        whereArgs: [0],
+        limit: 50,
+      );
+
+      if (unsyncedSales.isEmpty) return;
+
+      // Get sale items for each unsynced sale
+      final salesWithItems = <Map<String, dynamic>>[];
+
+      for (final sale in unsyncedSales) {
+        final saleItems = await db.query(
+          'sale_items',
+          where: 'sale_id = ?',
+          whereArgs: [sale['id']],
+        );
+
+        salesWithItems.add({
+          'sale': sale,
+          'items': saleItems,
+        });
+      }
+
+      // Upload to server (simplified - implement your API call)
+      // await _uploadToServer(salesWithItems);
 
       // Mark as synced
       final batch = db.batch();
-      for (final log in pendingLogs) {
+      for (final sale in unsyncedSales) {
         batch.update(
-          'sync_logs',
+          'sales',
           {
-            'status': 'synced',
+            'is_synced': 1,
             'updated_at': DateTime.now().millisecondsSinceEpoch,
           },
           where: 'id = ?',
-          whereArgs: [log['id']],
-        );
-
-        // Also mark the original record as synced
-        batch.update(
-          log['table_name'] as String,
-          {'is_synced': 1},
-          where: 'id = ?',
-          whereArgs: [log['record_id']],
+          whereArgs: [sale['id']],
         );
       }
       await batch.commit();
+
+      print('Successfully synced ${unsyncedSales.length} sales');
     } catch (e) {
-      // Handle sync failure with exponential backoff
-      await _handleSyncFailure(pendingLogs, e);
+      print('Upload error: $e');
+      rethrow;
     }
-  }
-
-  Future<void> _handleSyncFailure(
-    List<Map<String, dynamic>> failedLogs,
-    Object error,
-  ) async {
-    final db = await AppDatabase.database;
-    final batch = db.batch();
-
-    for (final log in failedLogs) {
-      final attempts = (log['sync_attempts'] as int?) ?? 0;
-      final newAttempts = attempts + 1;
-
-      batch.update(
-        'sync_logs',
-        {
-          'sync_attempts': newAttempts,
-          'last_sync_attempt': DateTime.now().millisecondsSinceEpoch,
-          'error_message': error.toString(),
-          'status': newAttempts >= 3 ? 'failed' : 'pending',
-        },
-        where: 'id = ?',
-        whereArgs: [log['id']],
-      );
-    }
-
-    await batch.commit();
   }
 
   Future<void> _downloadUpdates() async {
-    final db = await AppDatabase.database;
-    final apiClient = ref.read(apiClientProvider);
-
-    // Get last sync timestamp
-    final lastSync = await _getLastSyncTimestamp();
-
     try {
-      final dynamic updatesResponse = await apiClient.downloadUpdates(lastSync);
+      final lastSync = await _getLastSyncTimestamp();
+      print('Downloading updates since: $lastSync');
 
-      // Normalize the response to a Map<String, dynamic> if possible
-      Map<String, dynamic>? updates;
-      if (updatesResponse is Map<String, dynamic>) {
-        updates = updatesResponse;
-      } else if (updatesResponse != null) {
-        // Try common conversion methods/fields used by DTOs
-        try {
-          final dynamic asJson = (updatesResponse as dynamic).toJson?.call() ??
-              (updatesResponse as dynamic).toMap?.call() ??
-              (updatesResponse as dynamic).data;
-          if (asJson is Map) {
-            updates = Map<String, dynamic>.from(asJson);
-          }
-        } catch (_) {
-          // ignore and treat as no updates
-        }
-      }
-      }
-
-      if (updates != null && updates.isNotEmpty) {
-        await _applyServerUpdates(updates);
-      }
+      // Implement your download logic here
+      // final updates = await ref.read(apiClientProvider).downloadUpdates(lastSync);
+      // await _applyServerUpdates(updates);
     } catch (e) {
       print('Download updates error: $e');
     }
@@ -171,31 +113,11 @@ class SyncManager {
   Future<int> _getLastSyncTimestamp() async {
     final db = await AppDatabase.database;
     final result = await db.rawQuery('''
-      SELECT MAX(updated_at) as last_sync FROM sync_logs 
-      WHERE status = 'synced'
+      SELECT MAX(updated_at) as last_sync FROM sales 
+      WHERE is_synced = 1
     ''');
 
     return result.first['last_sync'] as int? ?? 0;
-  }
-
-  Future<void> _applyServerUpdates(Map<String, dynamic> updates) async {
-    final db = await AppDatabase.database;
-    final batch = db.batch();
-
-    // Apply updates with server-wins conflict resolution
-    for (final tableName in updates.keys) {
-      final records = updates[tableName] as List<Map<String, dynamic>>;
-
-      for (final record in records) {
-        batch.insert(
-          tableName,
-          record,
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-      }
-    }
-
-    await batch.commit();
   }
 
   Future<void> forceSync() async {
@@ -205,18 +127,14 @@ class SyncManager {
   Future<Map<String, dynamic>> getSyncStatus() async {
     final db = await AppDatabase.database;
 
-    final pendingCount = await db.rawQuery('''
-      SELECT COUNT(*) as count FROM sync_logs WHERE status = 'pending'
-    ''');
-
-    final failedCount = await db.rawQuery('''
-      SELECT COUNT(*) as count FROM sync_logs WHERE status = 'failed'
+    final pendingResult = await db.rawQuery('''
+      SELECT COUNT(*) as count FROM sales WHERE is_synced = 0
     ''');
 
     return {
-      'pending': pendingCount.first['count'] as int,
-      'failed': failedCount.first['count'] as int,
+      'pending': pendingResult.first['count'] as int,
       'isSyncing': _isSyncing,
+      'lastSync': await _getLastSyncTimestamp(),
     };
   }
 

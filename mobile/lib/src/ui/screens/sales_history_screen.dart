@@ -17,7 +17,7 @@ class SalesHistoryScreen extends ConsumerStatefulWidget {
 class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   List<Sale> _sales = [];
   bool _isLoading = true;
-  String _filter = 'today'; // 'today', 'week', 'month', 'all'
+  String _filter = 'today'; // 'today', 'week', 'month', 'all', 'custom'
   DateTimeRange? _selectedDateRange;
   SaleWithItems? _selectedSale;
 
@@ -114,7 +114,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 4,
         child: _buildSaleDetailsContent(),
       ),
     );
@@ -123,168 +124,189 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   Widget _buildSaleDetailsContent() {
     final sale = _selectedSale!.sale;
     final items = _selectedSale!.items;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              const Icon(Icons.receipt_long,
-                  color: Color(0xFF10B981), size: 24),
-              const SizedBox(width: 12),
-              Text(
-                'Sale #${sale.id}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Sale Information
-          CustomCard(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            child: Column(
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
               children: [
-                _buildDetailRow('Date',
-                    '${AppDateUtils.formatDate(sale.createdAt)} ${AppDateUtils.formatTime(sale.createdAt)}'),
-                _buildDetailRow(
-                    'Payment Method', _formatPaymentMethod(sale.paymentMethod)),
-                _buildDetailRow('Status', _formatStatus(sale.paymentStatus)),
-                if (sale.taxAmount > 0)
-                  _buildDetailRow('Tax Amount',
-                      AppFormatters.formatCurrency(sale.taxAmount)),
-                if (sale.discountAmount > 0)
-                  _buildDetailRow('Discount',
-                      AppFormatters.formatCurrency(sale.discountAmount)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Items Header
-          const Text(
-            'Items',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Items List
-          CustomCard(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                ...items.map((item) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              item.productName,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'x${item.quantity}',
-                              style: TextStyle(color: Colors.grey.shade600),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              AppFormatters.formatCurrency(item.unitPrice),
-                              style: TextStyle(color: Colors.grey.shade600),
-                              textAlign: TextAlign.right,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              AppFormatters.formatCurrency(item.totalPrice),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF10B981),
-                              ),
-                              textAlign: TextAlign.right,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Total
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'TOTAL AMOUNT:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
+                Icon(Icons.receipt_long, color: colorScheme.primary, size: 28),
+                const SizedBox(width: 12),
                 Text(
-                  AppFormatters.formatCurrency(sale.finalAmount),
-                  style: const TextStyle(
+                  'Sale #${sale.id}',
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Color(0xFF10B981),
                   ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+
+            // Sale Information
+            Card(
+              elevation: 0,
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildDetailRow('Date',
+                        '${AppDateUtils.formatDate(sale.createdAt)} ${AppDateUtils.formatTime(sale.createdAt)}'),
+                    _buildDetailRow('Payment Method',
+                        _formatPaymentMethod(sale.paymentMethod)),
+                    _buildDetailRow(
+                        'Status', _formatStatus(sale.paymentStatus)),
+                    if (sale.taxAmount > 0)
+                      _buildDetailRow('Tax Amount',
+                          AppFormatters.formatCurrency(sale.taxAmount)),
+                    if (sale.discountAmount > 0)
+                      _buildDetailRow('Discount',
+                          AppFormatters.formatCurrency(sale.discountAmount)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Items Header
+            Text(
+              'Items',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Items List
+            Card(
+              elevation: 0,
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    ...items.map((item) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  item.productName,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  'x${item.quantity}',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  AppFormatters.formatCurrency(item.unitPrice),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  AppFormatters.formatCurrency(item.totalPrice),
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.primary,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Total
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'TOTAL AMOUNT:',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    AppFormatters.formatCurrency(sale.finalAmount),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: Colors.grey.shade600,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w500,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -315,7 +337,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       case 'refunded':
         return 'Refunded';
       default:
-        return status;
+        return status.capitalize();
     }
   }
 
@@ -329,8 +351,10 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      currentDate: DateTime.now(),
-      saveText: 'Apply',
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      helpText: 'Select Date Range',
+      confirmText: 'Apply',
+      cancelText: 'Cancel',
     );
 
     if (picked != null) {
@@ -363,11 +387,15 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sales History'),
-        backgroundColor: const Color(0xFF10B981),
-        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -382,7 +410,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           _buildFilterSection(),
 
           // Analytics Summary
-          if (_sales.isNotEmpty) _buildAnalyticsSummary(),
+          if (_sales.isNotEmpty && !_isLoading) _buildAnalyticsSummary(),
 
           // Sales List
           Expanded(
@@ -398,65 +426,81 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   }
 
   Widget _buildFilterSection() {
-    return CustomCard(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Quick Filters
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildFilterChip('Today', 'today'),
-                const SizedBox(width: 8),
-                _buildFilterChip('This Week', 'week'),
-                const SizedBox(width: 8),
-                _buildFilterChip('This Month', 'month'),
-                const SizedBox(width: 8),
-                _buildFilterChip('All Time', 'all'),
-                const SizedBox(width: 8),
-                _buildDateRangeChip(),
-              ],
-            ),
-          ),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-          // Selected Date Range
-          if (_filter == 'custom' && _selectedDateRange != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              '${AppDateUtils.formatDate(_selectedDateRange!.start)} - ${AppDateUtils.formatDate(_selectedDateRange!.end)}',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Quick Filters
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip('Today', 'today'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('This Week', 'week'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('This Month', 'month'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('All Time', 'all'),
+                  const SizedBox(width: 8),
+                  _buildDateRangeChip(),
+                ],
               ),
             ),
+
+            // Selected Date Range
+            if (_filter == 'custom' && _selectedDateRange != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                '${AppDateUtils.formatDate(_selectedDateRange!.start)} - ${AppDateUtils.formatDate(_selectedDateRange!.end)}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildFilterChip(String label, String value) {
     final isSelected = _filter == value;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return FilterChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) => _changeFilter(value),
-      backgroundColor: Colors.white,
-      selectedColor: const Color(0xFF10B981),
+      backgroundColor: colorScheme.surface,
+      selectedColor: colorScheme.primary,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       side: BorderSide(
-        color: const Color(0xFF10B981).withOpacity(isSelected ? 0.2 : 0.3),
+        color: colorScheme.primary.withOpacity(isSelected ? 0 : 0.2),
       ),
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : const Color(0xFF10B981),
-        fontWeight: FontWeight.w500,
+        color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+        fontWeight: FontWeight.w600,
       ),
+      elevation: isSelected ? 2 : 0,
+      pressElevation: 4,
     );
   }
 
   Widget _buildDateRangeChip() {
     final isSelected = _filter == 'custom';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return FilterChip(
       label: const Row(
         mainAxisSize: MainAxisSize.min,
@@ -468,108 +512,121 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       ),
       selected: isSelected,
       onSelected: (_) => _selectDateRange(),
-      backgroundColor: Colors.white,
-      selectedColor: const Color(0xFF10B981),
+      backgroundColor: colorScheme.surface,
+      selectedColor: colorScheme.primary,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       side: BorderSide(
-        color: const Color(0xFF10B981).withOpacity(isSelected ? 0.2 : 0.3),
+        color: colorScheme.primary.withOpacity(isSelected ? 0 : 0.2),
       ),
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : const Color(0xFF10B981),
-        fontWeight: FontWeight.w500,
+        color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+        fontWeight: FontWeight.w600,
       ),
+      elevation: isSelected ? 2 : 0,
+      pressElevation: 4,
     );
   }
 
   Widget _buildAnalyticsSummary() {
-    return CustomCard(
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          // Main Stats
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildAnalyticsItem(
-                'Total Sales',
-                AppFormatters.formatCurrency(_totalSalesAmount),
-                Icons.attach_money,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // Main Stats
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildAnalyticsItem(
+                  'Total Sales',
+                  AppFormatters.formatCurrency(_totalSalesAmount),
+                  Icons.attach_money,
+                ),
+                _buildAnalyticsItem(
+                  'Total Orders',
+                  _totalOrders.toString(),
+                  Icons.receipt_long,
+                ),
+                _buildAnalyticsItem(
+                  'Avg. Order',
+                  AppFormatters.formatCurrency(_averageOrderValue),
+                  Icons.trending_up,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Payment Methods Breakdown
+            if (_paymentMethodBreakdown.isNotEmpty) ...[
+              Divider(color: colorScheme.outline.withOpacity(0.5)),
+              const SizedBox(height: 12),
+              Text(
+                'Payment Methods',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              _buildAnalyticsItem(
-                'Total Orders',
-                _totalOrders.toString(),
-                Icons.receipt_long,
-              ),
-              _buildAnalyticsItem(
-                'Avg. Order',
-                AppFormatters.formatCurrency(_averageOrderValue),
-                Icons.trending_up,
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: _paymentMethodBreakdown.entries.map((entry) {
+                  final percentage = (entry.value / _totalSalesAmount * 100);
+                  return Chip(
+                    label: Text(
+                      '${_formatPaymentMethod(entry.key)}: ${percentage.toStringAsFixed(1)}%',
+                    ),
+                    backgroundColor: colorScheme.primary.withOpacity(0.1),
+                    labelStyle: TextStyle(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    elevation: 1,
+                  );
+                }).toList(),
               ),
             ],
-          ),
-          const SizedBox(height: 16),
-
-          // Payment Methods Breakdown
-          if (_paymentMethodBreakdown.isNotEmpty) ...[
-            const Divider(),
-            const SizedBox(height: 12),
-            const Text(
-              'Payment Methods',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: _paymentMethodBreakdown.entries.map((entry) {
-                final percentage = (entry.value / _totalSalesAmount * 100);
-                return Chip(
-                  label: Text(
-                    '${_formatPaymentMethod(entry.key)}: ${percentage.toStringAsFixed(1)}%',
-                  ),
-                  backgroundColor: const Color(0xFF10B981).withOpacity(0.1),
-                  labelStyle: const TextStyle(
-                    color: Color(0xFF10B981),
-                    fontWeight: FontWeight.w500,
-                  ),
-                );
-              }).toList(),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildAnalyticsItem(String title, String value, IconData icon) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.1),
+            color: colorScheme.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: const Color(0xFF10B981), size: 24),
+          child: Icon(icon, color: colorScheme.primary, size: 28),
         ),
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 16,
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+            color: colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           title,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -582,29 +639,38 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       itemCount: 6,
       itemBuilder: (context, index) => const Padding(
         padding: EdgeInsets.only(bottom: 12),
-        child: LoadingShimmer(height: 100, borderRadius: 12),
+        child: LoadingShimmer(height: 120, borderRadius: 16),
       ),
     );
   }
 
   Widget _buildEmptyState() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.receipt_long, size: 64, color: Colors.grey.shade400),
+          Icon(Icons.receipt_long,
+              size: 80, color: colorScheme.onSurfaceVariant),
           const SizedBox(height: 16),
           Text(
             'No sales found',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.grey.shade600,
-                ),
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 8),
-          Text(
-            _getEmptyStateMessage(),
-            style: TextStyle(color: Colors.grey.shade500),
-            textAlign: TextAlign.center,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              _getEmptyStateMessage(),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -612,8 +678,12 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
             icon: const Icon(Icons.point_of_sale),
             label: const Text('Start Selling'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
         ],
@@ -637,137 +707,145 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
   }
 
   Widget _buildSalesList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _sales.length,
-      itemBuilder: (context, index) {
-        final sale = _sales[index];
-        return _buildSaleCard(sale);
-      },
+    return RefreshIndicator(
+      onRefresh: _loadSales,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _sales.length,
+        itemBuilder: (context, index) {
+          final sale = _sales[index];
+          return _buildSaleCard(sale);
+        },
+      ),
     );
   }
 
   Widget _buildSaleCard(Sale sale) {
-    return CustomCard(
-      onTap: () => _loadSaleDetails(sale.id!),
-      padding: const EdgeInsets.all(16),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: InkWell(
+        onTap: () => _loadSaleDetails(sale.id!),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  'Sale #${sale.id}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getPaymentMethodColor(sale.paymentMethod),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  _formatPaymentMethod(sale.paymentMethod),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Details
-          Row(
-            children: [
-              // Date and Time
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.calendar_today,
-                            size: 14, color: Colors.grey.shade600),
-                        const SizedBox(width: 4),
-                        Text(
-                          AppDateUtils.formatDate(sale.createdAt),
-                          style: TextStyle(
-                              fontSize: 12, color: Colors.grey.shade600),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.access_time,
-                            size: 14, color: Colors.grey.shade600),
-                        const SizedBox(width: 4),
-                        Text(
-                          AppDateUtils.formatTime(sale.createdAt),
-                          style: TextStyle(
-                              fontSize: 12, color: Colors.grey.shade600),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Amount
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    AppFormatters.formatCurrency(sale.finalAmount),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Color(0xFF10B981),
+                  Expanded(
+                    child: Text(
+                      'Sale #${sale.id}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Tap for details',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey.shade500,
-                      fontStyle: FontStyle.italic,
+                  Chip(
+                    label: Text(
+                      _formatPaymentMethod(sale.paymentMethod),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                    backgroundColor: _getPaymentMethodColor(sale.paymentMethod),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
                   ),
                 ],
               ),
-            ],
-          ),
+              const SizedBox(height: 12),
 
-          // Sync Status
-          if (!sale.isSynced) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.sync, size: 14, color: Colors.orange.shade600),
-                const SizedBox(width: 4),
-                Text(
-                  'Pending sync',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.orange.shade600,
-                    fontWeight: FontWeight.w500,
+              // Details
+              Row(
+                children: [
+                  // Date and Time
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_today,
+                                size: 16, color: colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 6),
+                            Text(
+                              AppDateUtils.formatDate(sale.createdAt),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.access_time,
+                                size: 16, color: colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 6),
+                            Text(
+                              AppDateUtils.formatTime(sale.createdAt),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
+
+                  // Amount
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        AppFormatters.formatCurrency(sale.finalAmount),
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tap for details',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              // Sync Status
+              if (!sale.isSynced) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.sync, size: 16, color: Colors.orange.shade600),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Pending sync',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.orange.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -785,5 +863,11 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
       default:
         return const Color(0xFF6B7280);
     }
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }

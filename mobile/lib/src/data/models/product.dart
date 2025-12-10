@@ -188,4 +188,60 @@ class Product {
     if (isLowStock) return Colors.orange;
     return Colors.green;
   }
+
+  factory Product.createSample() {
+    return Product(
+      productId: 'prod_sample_${DateTime.now().millisecondsSinceEpoch}',
+      name: 'Sample Product',
+      nameAm: 'ናሙና ምርት',
+      description: 'This is a sample product for testing',
+      price: 99.99,
+      costPrice: 50.00,
+      stockQuantity: 25,
+      minStockLevel: 10,
+      barcode: '1234567890123',
+      sku: 'SKU-001',
+      categoryId: 'cat_001',
+      unit: 'pcs',
+      brand: 'Sample Brand',
+      supplier: 'Sample Supplier',
+      trackInventory: true,
+      isActive: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  factory Product.createSampleWithIndex(int index) {
+    final products = [
+      {'name': 'Coca Cola', 'nameAm': 'ኮካ ኮላ', 'price': 25.0, 'stock': 50},
+      {'name': 'Mirinda', 'nameAm': 'ሚሪንዳ', 'price': 25.0, 'stock': 30},
+      {'name': 'Ambo Water', 'nameAm': 'አምቦ ውሃ', 'price': 15.0, 'stock': 100},
+      {'name': 'Biscuit', 'nameAm': 'ብስኩት', 'price': 10.0, 'stock': 75},
+      {'name': 'Bread', 'nameAm': 'ዳቦ', 'price': 20.0, 'stock': 25},
+    ];
+
+    final productData = products[index % products.length];
+
+    return Product(
+      productId: 'prod_sample_${DateTime.now().millisecondsSinceEpoch}_$index',
+      name: productData['name'] as String,
+      nameAm: productData['nameAm'] as String,
+      description: 'Sample product description',
+      price: productData['price'] as double,
+      costPrice: (productData['price'] as double) * 0.6,
+      stockQuantity: productData['stock'] as int,
+      minStockLevel: 10,
+      barcode: '1234567890${index.toString().padLeft(3, '0')}',
+      sku: 'SKU-${index.toString().padLeft(3, '0')}',
+      categoryId: 'cat_${(index % 3 + 1).toString().padLeft(3, '0')}',
+      unit: 'pcs',
+      brand: 'Sample Brand',
+      supplier: 'Sample Supplier',
+      trackInventory: true,
+      isActive: true,
+      createdAt: DateTime.now().subtract(Duration(days: index * 2)),
+      updatedAt: DateTime.now(),
+    );
+  }
 }

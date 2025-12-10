@@ -14,23 +14,28 @@ dependencies:
   flutter_riverpod: ^2.5.1
   hooks_riverpod: ^2.5.1
   flutter_hooks: ^0.20.5
-
+  # fl_chart: ^0.66.2
+  # ethiopian_calendar: ^0.0.2
   # 💾 Local Database
   sqflite: ^2.3.3+1
   path: ^1.9.0
-
   # 🌐 Networking & API
   dio: ^5.7.0
   retrofit: ^4.1.0
   logger: ^2.0.2
+  fl_chart: ^0.68.0
+  flutter_animate: ^4.5.0
 
   # 🔐 Security
   flutter_secure_storage: ^9.2.2
 
-  # 🖨️ Bluetooth Printing - REPLACE WITH WORKING PACKAGE
-  # bluetooth_print: ^4.3.0  # ❌ REMOVE THIS
-  esc_pos_utils: ^1.1.0 # ✅ ADD THIS - For receipt formatting
+  # 🖨️ Printing
+  # esc_pos_utils: ^1.1.0
+  printing: ^5.13.2
+  esc_pos_utils_plus: ^2.0.4
+  # flutter_esc_pos: ^0.1.1 # Alternative working package
   network_to_file_image: ^3.0.2 # ✅ ADD THIS - Fallback
+  flutter_blue_plus: ^1.30.1 # For Bluetooth connectivity
 
   # 🌍 Localization
   flutter_localizations:
@@ -44,6 +49,8 @@ dependencies:
   # 🧭 Navigation
   go_router: ^14.2.0
   shared_preferences: ^2.2.2
+  syncfusion_flutter_charts: ^31.1.19
+  # printing: ^5.9.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -56,6 +63,49 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter_18pt-Regular.ttf
+        - asset: assets/fonts/Inter_18pt-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter_18pt-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter_18pt-Bold.ttf
+          weight: 700
 
-  assets:
-    - assets/
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+        - asset: assets/fonts/NotoSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSans-Bold.ttf
+          weight: 700
+
+    - family: NotoSansEthiopic
+      fonts:
+        - asset: assets/fonts/NotoSansEthiopic-Regular.ttf
+        - asset: assets/fonts/NotoSansEthiopic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSansEthiopic-Bold.ttf
+          weight: 700
+
+    # - family: PowerGeez
+    #   fonts:
+    #     - asset: assets/fonts/PowerGeez.ttf
+
+    - family: AbyssinicaSIL
+      fonts:
+        - asset: assets/fonts/AbyssinicaSIL-Regular.ttf
+          weight: 700
+    - family: RobotoMono
+      fonts:
+        - asset: assets/fonts/RobotoMono-Regular.ttf

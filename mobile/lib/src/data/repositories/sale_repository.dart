@@ -330,54 +330,54 @@ class SalesSummary {
 }
 
 // Add method to create sample sales data for testing
-// Future<void> createSampleSales() async {
-//   final sampleSales = [
-//     Sale(
-//       saleId: 'SALE-${DateTime.now().millisecondsSinceEpoch}',
-//       totalAmount: 250.0,
-//       finalAmount: 250.0,
-//       paymentMethod: 'cash',
-//       userId: 1,
-//       shopId: 1,
-//       createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-//       localId: '',
-//     ),
-//     Sale(
-//       saleId: 'SALE-${DateTime.now().millisecondsSinceEpoch + 1}',
-//       totalAmount: 150.0,
-//       finalAmount: 150.0,
-//       paymentMethod: 'telebirr',
-//       userId: 1,
-//       shopId: 1,
-//       createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-//       localId: '',
-//     ),
-//     Sale(
-//       saleId: 'SALE-${DateTime.now().millisecondsSinceEpoch + 2}',
-//       totalAmount: 75.0,
-//       finalAmount: 75.0,
-//       paymentMethod: 'card',
-//       userId: 1,
-//       shopId: 1,
-//       createdAt: DateTime.now().subtract(const Duration(days: 1)),
-//       localId: '',
-//     ),
-//   ];
+Future<void> createSampleSales() async {
+  final sampleSales = [
+    Sale(
+      saleId: 'SALE-${DateTime.now().millisecondsSinceEpoch}',
+      totalAmount: 250.0,
+      finalAmount: 250.0,
+      paymentMethod: 'cash',
+      userId: 1,
+      shopId: 1,
+      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+      localId: '',
+    ),
+    Sale(
+      saleId: 'SALE-${DateTime.now().millisecondsSinceEpoch + 1}',
+      totalAmount: 150.0,
+      finalAmount: 150.0,
+      paymentMethod: 'telebirr',
+      userId: 1,
+      shopId: 1,
+      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+      localId: '',
+    ),
+    Sale(
+      saleId: 'SALE-${DateTime.now().millisecondsSinceEpoch + 2}',
+      totalAmount: 75.0,
+      finalAmount: 75.0,
+      paymentMethod: 'card',
+      userId: 1,
+      shopId: 1,
+      createdAt: DateTime.now().subtract(const Duration(days: 1)),
+      localId: '',
+    ),
+  ];
 
-//   for (final sale in sampleSales) {
-//     await createSale(sale, [
-//       SaleItem(
-//         saleId: 0, // Will be replaced with actual sale ID
-//         productId: 1,
-//         productName: 'Sample Product',
-//         quantity: 2,
-//         unitPrice: 25.0,
-//         totalPrice: 50.0,
-//         createdAt: sale.createdAt,
-//       ),
-//     ]);
-//   }
-// }
+  for (final sale in sampleSales) {
+    await createSale(sale, [
+      SaleItem(
+        saleId: 0, // Will be replaced with actual sale ID
+        productId: 1,
+        productName: 'Sample Product',
+        quantity: 2,
+        unitPrice: 25.0,
+        totalPrice: 50.0,
+        createdAt: sale.createdAt,
+      ),
+    ]);
+  }
+}
 
 Future<void> createSale(Sale sale, List<SaleItem> items) async {
   final repository = SaleRepository();

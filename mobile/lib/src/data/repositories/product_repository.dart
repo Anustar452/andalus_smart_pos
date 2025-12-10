@@ -194,43 +194,43 @@ class ProductRepository {
       rethrow;
     }
   }
-}
 
-Future<void> createSampleProducts(ProductRepository productRepo) async {
-  final sampleProducts = [
-    Product(
-      id: 1,
-      name: 'Sample Product 1',
-      sku: 'SP001',
-      barcode: '1234567890123',
-      categoryId: 'cat1',
-      price: 9.99,
-      stockQuantity: 100,
-      isActive: true,
-      trackInventory: true,
-      productId: '',
-      nameAm: '',
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-    Product(
-      id: 2,
-      name: 'Sample Product 2',
-      sku: 'SP002',
-      barcode: '1234567890124',
-      categoryId: 'cat2',
-      price: 19.99,
-      stockQuantity: 50,
-      isActive: true,
-      trackInventory: true,
-      productId: '',
-      nameAm: '',
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-  ];
+  Future<void> createSampleProducts(ProductRepository productRepo) async {
+    final sampleProducts = [
+      Product(
+        id: 1,
+        name: 'Sample Product 1',
+        sku: 'SP001',
+        barcode: '1234567890123',
+        categoryId: 'cat1',
+        price: 9.99,
+        stockQuantity: 100,
+        isActive: true,
+        trackInventory: true,
+        productId: '',
+        nameAm: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+      Product(
+        id: 2,
+        name: 'Sample Product 2',
+        sku: 'SP002',
+        barcode: '1234567890124',
+        categoryId: 'cat2',
+        price: 19.99,
+        stockQuantity: 50,
+        isActive: true,
+        trackInventory: true,
+        productId: '',
+        nameAm: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    ];
 
-  for (var product in sampleProducts) {
-    await productRepo.createProduct(product);
+    for (var product in sampleProducts) {
+      await productRepo.createProduct(product);
+    }
   }
 }

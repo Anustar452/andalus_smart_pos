@@ -1,3 +1,4 @@
+//src/data/models/registration.dart
 import 'package:andalus_smart_pos/src/data/models/user.dart';
 
 class BusinessRegistration {

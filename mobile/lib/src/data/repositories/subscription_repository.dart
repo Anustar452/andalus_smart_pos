@@ -1,64 +1,74 @@
-import 'package:andalus_smart_pos/src/data/local/database.dart';
-import 'package:andalus_smart_pos/src/data/models/subscription.dart';
+// data/repositories/subscription_repository.dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sqflite/sqflite.dart';
+import '../local/database.dart';
+import '../models/subscription.dart';
 
 class SubscriptionRepository {
-  SubscriptionRepository(); // Remove database parameter
+  Future<Database> get _db async => await AppDatabase.database;
+
+  Future<Subscription?> getCurrentSubscription() async {
+    final db = await _db;
+
+    try {
+      final maps = await db.query(
+        'subscriptions',
+        where: 'is_active = 1',
+        orderBy: 'created_at DESC',
+        limit: 1,
+      );
+
+      if (maps.isNotEmpty) {
+        return Subscription.fromMap(maps.first);
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching current subscription: $e');
+      return null;
+    }
+  }
+
+  Future<List<Subscription>> getSubscriptionHistory() async {
+    final db = await _db;
+
+    try {
+      final maps = await db.query(
+        'subscriptions',
+        orderBy: 'created_at DESC',
+      );
+
+      return maps.map((map) => Subscription.fromMap(map)).toList();
+    } catch (e) {
+      print('Error fetching subscription history: $e');
+      return [];
+    }
+  }
 
   Future<void> createSubscription(Subscription subscription) async {
-    final db = await AppDatabase.database;
-    await db.insert('subscriptions', subscription.toMap());
+    final db = await _db;
+
+    try {
+      await db.insert(
+        'subscriptions',
+        subscription.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      print('Error creating subscription: $e');
+      rethrow;
+    }
   }
 
-  Future<Subscription?> getActiveSubscription(String businessId) async {
-    final db = await AppDatabase.database;
-    final result = await db.query(
-      'subscriptions',
-      where: 'business_id = ? AND is_active = 1 AND end_date > ?',
-      whereArgs: [businessId, DateTime.now().millisecondsSinceEpoch],
-      orderBy: 'created_at DESC',
-      limit: 1,
-    );
-
-    if (result.isEmpty) return null;
-    return Subscription.fromMap(result.first);
-  }
-
-  Future<void> updateSubscription(Subscription subscription) async {
-    final db = await AppDatabase.database;
-    await db.update(
-      'subscriptions',
-      subscription.toMap(),
-      where: 'subscription_id = ?',
-      whereArgs: [subscription.id],
-    );
-  }
-
-  Future<List<Subscription>> getSubscriptionHistory(String businessId) async {
-    final db = await AppDatabase.database;
-    final result = await db.query(
-      'subscriptions',
-      where: 'business_id = ?',
-      whereArgs: [businessId],
-      orderBy: 'created_at DESC',
-    );
-    return result.map((map) => Subscription.fromMap(map)).toList();
-  }
-
-  Future<bool> hasValidSubscription(String businessId) async {
-    final subscription = await getActiveSubscription(businessId);
-    return subscription != null && subscription.isValid;
-  }
-
-  Future<void> deactivateSubscription(String subscriptionId) async {
-    final db = await AppDatabase.database;
-    await db.update(
-      'subscriptions',
-      {
-        'is_active': 0,
-        'updated_at': DateTime.now().millisecondsSinceEpoch,
-      },
-      where: 'subscription_id = ?',
-      whereArgs: [subscriptionId],
-    );
+  Future hasValidSubscription(String s) async {
+    final subscription = await getCurrentSubscription();
+    if (subscription == null) {
+      return false;
+    }
+    final now = DateTime.now();
+    return subscription.expiryDate.isAfter(now);
   }
 }
+
+final subscriptionRepositoryProvider = Provider<SubscriptionRepository>((ref) {
+  return SubscriptionRepository();
+});

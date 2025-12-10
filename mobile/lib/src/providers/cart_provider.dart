@@ -1,3 +1,4 @@
+// mobile/lib/src/providers/cart_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/data/models/cart_item.dart';
 

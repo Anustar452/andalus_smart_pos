@@ -23,7 +23,7 @@ class DatabaseInitializer {
       await db.insert('business_profile', {
         'business_id': 'business_001',
         'name': 'Andalus POS Shop',
-        'name_am': 'አንዳሉስ ፖስ ሱቅ',
+        'name_am': 'አንደሉስ ፖስ ሱቅ',
         'business_type': 'Retail',
         'phone': '+251911223344',
         'email': 'info@andaluspos.com',
@@ -56,7 +56,7 @@ class DatabaseInitializer {
       final adminUser = User(
         id: 'admin_001',
         name: 'Admin User',
-        phone: '+251911223344', // Change this to your admin phone
+        phone: '+911223344', // Change this to your admin phone
         email: 'admin@andaluspos.com',
         role: UserRole.owner,
         createdAt: DateTime.now(),

@@ -1,3 +1,9 @@
+//lib/src
+import 'package:andalus_smart_pos/src/data/models/customer.dart';
+import 'package:andalus_smart_pos/src/providers/language_provider.dart';
+import 'package:andalus_smart_pos/src/ui/screens/customer_management_screen.dart';
+import 'package:andalus_smart_pos/src/ui/screens/product_management_screen.dart';
+import 'package:andalus_smart_pos/src/utils/calendar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/data/repositories/sale_repository.dart';
@@ -5,11 +11,20 @@ import 'package:andalus_smart_pos/src/data/repositories/customer_repository.dart
 import 'package:andalus_smart_pos/src/data/repositories/product_repository.dart';
 import 'package:andalus_smart_pos/src/data/models/sale.dart';
 import 'package:andalus_smart_pos/src/data/models/product.dart';
-import 'package:andalus_smart_pos/src/widgets/common/custom_card.dart';
-import 'package:andalus_smart_pos/src/widgets/common/stat_card.dart';
-import 'package:andalus_smart_pos/src/widgets/common/loading_shimmer.dart';
 import 'package:andalus_smart_pos/src/utils/date_utils.dart';
 import 'package:andalus_smart_pos/src/utils/formatters.dart';
+import 'package:andalus_smart_pos/src/localization/app_localizations.dart';
+// import 'package:andalus_smart_pos/src/widgets/dashboard/stat_card.dart';
+import 'package:andalus_smart_pos/src/widgets/dashboard/metric_card.dart';
+import 'package:andalus_smart_pos/src/widgets/dashboard/recent_sales_list.dart';
+import 'package:andalus_smart_pos/src/widgets/dashboard/stock_alert_widget.dart';
+import 'package:andalus_smart_pos/src/widgets/dashboard/quick_actions_widget.dart';
+// import 'package:andalus_smart_pos/src/widgets/dashboard/sales_charts.dart';
+import 'package:andalus_smart_pos/src/widgets/common/loading_shimmer.dart';
+// import 'package:andalus_smart_pos/src/localization/app_localizations.dart';
+import 'package:intl/intl.dart';
+import 'package:andalus_smart_pos/src/widgets/dashboard/dashboard_cards.dart';
+import 'package:andalus_smart_pos/src/widgets/dashboard/sales_analytics.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -34,19 +49,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       final customerRepository = ref.read(customerRepositoryProvider);
       final productRepository = ref.read(productRepositoryProvider);
 
+      // Load all data
       final salesSummary = await saleRepository.getSalesSummary();
       final creditSummary = await customerRepository.getCreditSummary();
       final todaysSales = await saleRepository.getTodaysSales();
       final lowStockProducts = await productRepository.getLowStockProducts();
       final totalProducts = await productRepository.getAllProducts();
 
-      // Calculate metrics with explicit type conversion
+      // Get customers for total count
+      List<Customer> allCustomers = [];
+      try {
+        allCustomers = await customerRepository.getAllCustomers();
+      } catch (e) {
+        print('Error loading customers: $e');
+        allCustomers = [];
+      }
+
+      // Calculate metrics
       final totalRevenue = salesSummary.totalSales;
       final averageOrderValue = salesSummary.totalOrders > 0
           ? (totalRevenue / salesSummary.totalOrders).toDouble()
           : 0.0;
 
-      // Calculate growth percentages with explicit type conversion
       final dailyGrowth = salesSummary.weeklySales > 0
           ? ((salesSummary.todaysSales / salesSummary.weeklySales * 100) - 100)
               .toDouble()
@@ -58,788 +82,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         todaysSales: todaysSales,
         lowStockProducts: lowStockProducts,
         totalProducts: totalProducts,
+        allCustomers: allCustomers,
         totalRevenue: totalRevenue,
         averageOrderValue: averageOrderValue,
         dailyGrowth: dailyGrowth,
         timestamp: DateTime.now(),
       );
     } catch (e) {
-      // If there's an error, create sample data for demonstration
-      return DashboardData.createSample();
+      print('Error loading dashboard data: $e');
+      // Return fallback data without using createSample methods
+      return _createFallbackDashboardData();
     }
   }
 
-  Future<void> _refreshData() async {
-    setState(() => _isRefreshing = true);
-    await Future.delayed(const Duration(milliseconds: 500)); // Simulate loading
-    setState(() {
-      _dashboardData = _loadDashboardData();
-      _isRefreshing = false;
-    });
-  }
-
-  Future<void> _createSampleData() async {
-    try {
-      final saleRepository = ref.read(saleRepositoryProvider);
-      // Check if the method exists before calling it
-      if (_isMethodAvailable(saleRepository, 'createSampleSales')) {
-        await saleRepository.createSampleSales();
-      }
-      _refreshData();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sample data created successfully!'),
-            backgroundColor: Color(0xFF10B981),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error creating sample data: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  bool _isMethodAvailable(dynamic object, String methodName) {
-    try {
-      return object.runtimeType.toString().contains(methodName) ||
-          (object is SaleRepository && methodName == 'createSampleSales');
-    } catch (e) {
-      return false;
-    }
-  }
-
-  void _navigateToPOS() {
-    Navigator.pushNamed(context, '/pos');
-  }
-
-  void _navigateToProducts() {
-    Navigator.pushNamed(context, '/products');
-  }
-
-  void _navigateToCustomers() {
-    Navigator.pushNamed(context, '/customers');
-  }
-
-  void _navigateToReports() {
-    Navigator.pushNamed(context, '/reports');
-  }
-  // void _navigateToReports() {
-  // Navigate to Reports screen
-  // Navigator.push(context, MaterialPageRoute(builder: (context) => ReportsScreen()));
-  // }
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 600;
-
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1F2937),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _isRefreshing ? Icons.refresh : Icons.refresh_outlined,
-              color: _isRefreshing ? Colors.grey : const Color(0xFF10B981),
-            ),
-            onPressed: _isRefreshing ? null : _refreshData,
-            tooltip: 'Refresh',
-          ),
-        ],
-      ),
-      body: FutureBuilder<DashboardData>(
-        future: _dashboardData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const DashboardShimmer();
-          }
-
-          if (snapshot.hasError) {
-            return DashboardErrorWidget(
-              error: snapshot.error.toString(),
-              onRetry: _refreshData,
-              onCreateSample: _createSampleData,
-            );
-          }
-
-          final data = snapshot.data!;
-
-          return RefreshIndicator(
-            onRefresh: _refreshData,
-            color: const Color(0xFF10B981),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Quick Stats Grid - Responsive
-                  _buildQuickStats(data, isSmallScreen),
-                  const SizedBox(height: 20),
-
-                  // Performance Overview
-                  _buildPerformanceOverview(data),
-                  const SizedBox(height: 20),
-
-                  // Recent Activity & Side Panels
-                  isSmallScreen
-                      ? _buildMobileLayout(data)
-                      : _buildDesktopLayout(data),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildQuickStats(DashboardData data, bool isSmallScreen) {
-    final crossAxisCount = isSmallScreen ? 2 : 4;
-    final childAspectRatio = isSmallScreen ? 1.3 : 1.1;
-
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: crossAxisCount,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: childAspectRatio,
-      children: [
-        _buildStatItem(
-          'Today\'s Revenue',
-          AppFormatters.formatCurrency(data.salesSummary.todaysSales),
-          Icons.attach_money_rounded,
-          const Color(0xFF10B981),
-          trend: data.dailyGrowth > 0
-              ? 1
-              : data.dailyGrowth < 0
-                  ? -1
-                  : 0,
-          subtitle: '${data.salesSummary.todaysOrders} orders',
-        ),
-        _buildStatItem(
-          'Weekly Sales',
-          AppFormatters.formatCurrency(data.salesSummary.weeklySales),
-          Icons.trending_up_rounded,
-          const Color(0xFF3B82F6),
-          subtitle: '${data.salesSummary.weeklyOrders} orders',
-        ),
-        _buildStatItem(
-          'Total Revenue',
-          AppFormatters.formatCompactCurrency(data.totalRevenue),
-          Icons.bar_chart_rounded,
-          const Color(0xFF8B5CF6),
-        ),
-        _buildStatItem(
-          'Outstanding',
-          AppFormatters.formatCurrency(
-              data.creditSummary['totalOutstanding'] ?? 0),
-          Icons.credit_card_rounded,
-          const Color(0xFFF59E0B),
-          isWarning: (data.creditSummary['overdueAmount'] ?? 0) > 0,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatItem(
-    String title,
-    String value,
-    IconData icon,
-    Color color, {
-    int? trend,
-    String? subtitle,
-    bool isWarning = false,
-  }) {
-    return CustomCard(
-      padding: const EdgeInsets.all(16),
-      margin: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 18),
-              ),
-              if (trend != null) ...[
-                Icon(
-                  trend > 0 ? Icons.trending_up : Icons.trending_down,
-                  color: trend > 0 ? Colors.green : Colors.red,
-                  size: 16,
-                ),
-              ],
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 4),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPerformanceOverview(DashboardData data) {
-    return CustomCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.analytics_rounded,
-                    color: Color(0xFF10B981), size: 20),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Performance Overview',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 3,
-            children: [
-              _buildMetricItem(
-                'Average Order Value',
-                AppFormatters.formatCurrency(data.averageOrderValue),
-                Icons.shopping_cart_rounded,
-              ),
-              _buildMetricItem(
-                'Total Orders',
-                data.salesSummary.totalOrders.toString(),
-                Icons.receipt_long_rounded,
-              ),
-              _buildMetricItem(
-                'Customers with Balance',
-                (data.creditSummary['customersWithBalance'] ?? 0).toString(),
-                Icons.people_alt_rounded,
-              ),
-              _buildMetricItem(
-                'Overdue Amount',
-                AppFormatters.formatCurrency(
-                    data.creditSummary['overdueAmount'] ?? 0),
-                Icons.warning_amber_rounded,
-                isWarning: (data.creditSummary['overdueAmount'] ?? 0) > 0,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetricItem(
-    String label,
-    String value,
-    IconData icon, {
-    bool isWarning = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Icon(icon,
-              size: 16,
-              color: isWarning
-                  ? const Color(0xFFEF4444)
-                  : const Color(0xFF6B7280)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color:
-                  isWarning ? const Color(0xFFEF4444) : const Color(0xFF1F2937),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMobileLayout(DashboardData data) {
-    return Column(
-      children: [
-        _buildRecentSales(data.todaysSales),
-        const SizedBox(height: 16),
-        _buildLowStockAlert(data.lowStockProducts),
-        const SizedBox(height: 16),
-        _buildQuickActions(),
-      ],
-    );
-  }
-
-  Widget _buildDesktopLayout(DashboardData data) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: _buildRecentSales(data.todaysSales),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          flex: 1,
-          child: Column(
-            children: [
-              _buildLowStockAlert(data.lowStockProducts),
-              const SizedBox(height: 16),
-              _buildQuickActions(),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRecentSales(List<Sale> sales) {
-    return CustomCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.receipt_long_rounded,
-                    color: Color(0xFF10B981), size: 20),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Recent Sales',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                'Today',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (sales.isEmpty)
-            _buildEmptySalesState()
-          else
-            Column(
-              children:
-                  sales.take(5).map((sale) => _buildSaleItem(sale)).toList(),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSaleItem(Sale sale) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color:
-                  _getPaymentMethodColor(sale.paymentMethod).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              _getPaymentMethodIcon(sale.paymentMethod),
-              color: _getPaymentMethodColor(sale.paymentMethod),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Sale #${sale.id ?? 'N/A'}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${AppDateUtils.formatTime(sale.createdAt)} • ${_formatPaymentMethod(sale.paymentMethod)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                sale.formattedTotal,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Color(0xFF10B981),
-                ),
-              ),
-              Text(
-                AppDateUtils.formatDate(sale.createdAt),
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey.shade500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLowStockAlert(List<Product> lowStockProducts) {
-    return CustomCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.warning_amber_rounded,
-                    color: Color(0xFFEF4444), size: 16),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Low Stock Alert',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (lowStockProducts.isEmpty)
-            Text(
-              'All products are well stocked',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
-            )
-          else
-            Column(
-              children: lowStockProducts
-                  .take(3)
-                  .map((product) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                product.name,
-                                style: const TextStyle(fontSize: 12),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Text(
-                              '${product.stockQuantity} left',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.orange.shade700,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ))
-                  .toList(),
-            ),
-          if (lowStockProducts.length > 3) ...[
-            const SizedBox(height: 8),
-            Text(
-              '+${lowStockProducts.length - 3} more',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade500,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return CustomCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Quick Actions',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildActionChip(Icons.point_of_sale, 'New Sale', _navigateToPOS),
-              _buildActionChip(
-                  Icons.inventory_2, 'Add Product', _navigateToProducts),
-              _buildActionChip(
-                  Icons.people, 'Add Customer', _navigateToCustomers),
-              _buildActionChip(Icons.bar_chart, 'Reports', _navigateToReports),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionChip(IconData icon, String label, VoidCallback onTap) {
-    return ActionChip(
-      avatar: Icon(icon, size: 14),
-      label: Text(label, style: const TextStyle(fontSize: 11)),
-      onPressed: onTap,
-      backgroundColor: const Color(0xFF10B981).withOpacity(0.1),
-      labelStyle: const TextStyle(color: Color(0xFF10B981)),
-    );
-  }
-
-  Widget _buildEmptySalesState() {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
-        Icon(Icons.receipt_long_outlined,
-            size: 48, color: Colors.grey.shade400),
-        const SizedBox(height: 12),
-        Text(
-          'No sales today',
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Complete your first sale to see it here!',
-          style: TextStyle(
-            color: Colors.grey.shade500,
-            fontSize: 12,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 16),
-        ElevatedButton.icon(
-          onPressed: _navigateToPOS,
-          icon: const Icon(Icons.point_of_sale, size: 16),
-          label: const Text('Start Selling'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF10B981),
-            foregroundColor: Colors.white,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Helper methods
-  Color _getPaymentMethodColor(String method) {
-    switch (method.toLowerCase()) {
-      case 'cash':
-        return const Color(0xFF10B981);
-      case 'telebirr':
-        return const Color(0xFF3B82F6);
-      case 'card':
-        return const Color(0xFF8B5CF6);
-      case 'credit':
-        return const Color(0xFFF59E0B);
-      default:
-        return const Color(0xFF6B7280);
-    }
-  }
-
-  IconData _getPaymentMethodIcon(String method) {
-    switch (method.toLowerCase()) {
-      case 'cash':
-        return Icons.money;
-      case 'telebirr':
-        return Icons.qr_code;
-      case 'card':
-        return Icons.credit_card;
-      case 'credit':
-        return Icons.credit_score;
-      default:
-        return Icons.payment;
-    }
-  }
-
-  String _formatPaymentMethod(String method) {
-    switch (method.toLowerCase()) {
-      case 'cash':
-        return 'Cash';
-      case 'telebirr':
-        return 'Telebirr';
-      case 'card':
-        return 'Card';
-      case 'credit':
-        return 'Credit';
-      default:
-        return method;
-    }
-  }
-}
-
-// Dashboard Data Model
-class DashboardData {
-  final SalesSummary salesSummary;
-  final Map<String, dynamic> creditSummary;
-  final List<Sale> todaysSales;
-  final List<Product> lowStockProducts;
-  final List<Product> totalProducts;
-  final double totalRevenue;
-  final double averageOrderValue;
-  final double dailyGrowth;
-  final DateTime timestamp;
-
-  DashboardData({
-    required this.salesSummary,
-    required this.creditSummary,
-    required this.todaysSales,
-    required this.lowStockProducts,
-    required this.totalProducts,
-    required this.totalRevenue,
-    required this.averageOrderValue,
-    required this.dailyGrowth,
-    required this.timestamp,
-  });
-
-  factory DashboardData.createSample() {
+// Add this fallback method
+  DashboardData _createFallbackDashboardData() {
     return DashboardData(
       salesSummary: SalesSummary(
         todaysSales: 1250.0,
@@ -856,27 +113,608 @@ class DashboardData {
         'overdueCustomers': 1,
         'totalCustomers': 15,
       },
-      todaysSales: List.generate(3, (index) => Sale.createSample()),
+      todaysSales: [],
       lowStockProducts: [],
       totalProducts: [],
+      allCustomers: [],
       totalRevenue: 12500.0,
       averageOrderValue: 277.78,
       dailyGrowth: 15.2,
       timestamp: DateTime.now(),
     );
   }
+
+  Future<void> _refreshData() async {
+    setState(() => _isRefreshing = true);
+    await Future.delayed(const Duration(milliseconds: 800));
+    setState(() {
+      _dashboardData = _loadDashboardData();
+      _isRefreshing = false;
+    });
+  }
+
+// Add navigation methods:
+  void _navigateToSalesDetails(BuildContext context) {
+    // Navigate to sales details screen
+    showDialog(
+      context: context,
+      builder: (context) => _buildSalesDetailsDialog(context),
+    );
+  }
+
+  void _navigateToProducts(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProductManagementScreen()),
+    );
+  }
+
+  void _navigateToCustomers(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CustomerManagementScreen()),
+    );
+  }
+
+  void _navigateToRevenueAnalytics(BuildContext context) {
+    // Navigate to detailed revenue analytics
+    showDialog(
+      context: context,
+      builder: (context) => _buildRevenueAnalyticsDialog(context),
+    );
+  }
+
+// Helper methods
+
+// Helper methods for dashboard
+  int _getTotalItems(List<Product> products) {
+    if (products.isEmpty) return 0;
+    return products.fold(0, (sum, product) => sum + (product.stockQuantity));
+  }
+
+  int _getTotalCategories(List<Product> products) {
+    if (products.isEmpty) return 0;
+    final categoryIds =
+        // ignore: unnecessary_null_comparison
+        products.map((p) => p.categoryId).where((id) => id != null).toSet();
+    return categoryIds.length;
+  }
+
+  int _getTotalCustomers(DashboardData data) {
+    // Try to get from credit summary first, then fallback to actual list
+    final fromSummary = data.creditSummary['totalCustomers'] as int?;
+    if (fromSummary != null) return fromSummary;
+    return data.allCustomers.length;
+  }
+
+  int _getCustomersWithBalance(DashboardData data) {
+    return data.creditSummary['customersWithBalance'] as int? ?? 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.background,
+      appBar: _buildAppBar(localizations),
+      body: FutureBuilder<DashboardData>(
+        future: _dashboardData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return DashboardShimmer(localizations: localizations);
+          }
+
+          if (snapshot.hasError) {
+            return DashboardErrorWidget(
+              error: snapshot.error.toString(),
+              onRetry: _refreshData,
+              localizations: localizations,
+            );
+          }
+
+          final data = snapshot.data!;
+
+          return RefreshIndicator.adaptive(
+            onRefresh: _refreshData,
+            color: Theme.of(context).colorScheme.primary,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _buildLiveDateTimeWidget(context),
+                ),
+                // Header Stats Section
+                _buildStatsSection(data, localizations),
+
+                // Charts Section
+                _buildChartsSection(data, localizations),
+
+                // Content Section
+                _buildContentSection(data, localizations),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  AppBar _buildAppBar(AppLocalizations localizations) {
+    return AppBar(
+      title: Text(
+        localizations.dashboard,
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 24,
+          color: Theme.of(context).colorScheme.onBackground,
+        ),
+      ),
+      backgroundColor: Colors.transparent,
+      foregroundColor: Theme.of(context).colorScheme.onBackground,
+      elevation: 0,
+      actions: [
+        IconButton(
+          icon: Icon(
+            _isRefreshing ? Icons.refresh : Icons.refresh_rounded,
+            color: _isRefreshing
+                ? Theme.of(context).colorScheme.outline
+                : Theme.of(context).colorScheme.primary,
+          ),
+          onPressed: _isRefreshing ? null : _refreshData,
+          tooltip: localizations.translate('refresh'),
+        ),
+      ],
+    );
+  }
+
+  SliverToBoxAdapter _buildStatsSection(
+      DashboardData data, AppLocalizations localizations) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTablet = constraints.maxWidth > 600;
+            final crossAxisCount = isTablet ? 4 : 2;
+
+            // Use fixed height instead of aspect ratio for better control
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.0, // Square cards
+              padding: EdgeInsets.zero,
+              children: [
+                SizedBox(
+                  height: 130, // Fixed height matching card height
+                  child: SalesCard(
+                    todaySales: data.salesSummary.todaysSales,
+                    itemsSold: data.salesSummary.todaysOrders,
+                    onTap: () => _navigateToSalesDetails(context),
+                  ),
+                ),
+                SizedBox(
+                  height: 130,
+                  child: ProductsCard(
+                    totalProducts: data.totalProducts.length,
+                    totalItems: _getTotalItems(data.totalProducts),
+                    totalCategories: _getTotalCategories(data.totalProducts),
+                    onTap: () => _navigateToProducts(context),
+                  ),
+                ),
+                SizedBox(
+                  height: 130,
+                  child: CustomersCard(
+                    totalCustomers: _getTotalCustomers(data),
+                    customersWithBalance: _getCustomersWithBalance(data),
+                    onTap: () => _navigateToCustomers(context),
+                  ),
+                ),
+                SizedBox(
+                  height: 130,
+                  child: RevenueCard(
+                    totalRevenue: data.totalRevenue,
+                    outstandingCredit:
+                        data.creditSummary['totalOutstanding'] as double? ??
+                            0.0,
+                    onTap: () => _navigateToRevenueAnalytics(context),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  SliverToBoxAdapter _buildChartsSection(
+      DashboardData data, AppLocalizations localizations) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 12), // Reduced padding
+        child: SalesAnalyticsWidget(
+          salesData: data.salesSummary,
+          localizations: localizations,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContentSection(
+      DashboardData data, AppLocalizations localizations) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(
+          children: [
+            _buildInsightsSection(data, localizations), // Add this line
+            const SizedBox(height: 20),
+            _buildPerformanceOverview(data, localizations),
+            const SizedBox(height: 20),
+            RecentSalesList(
+              sales: data.todaysSales,
+              localizations: localizations,
+            ),
+            const SizedBox(height: 20),
+            StockAlertWidget(
+              products: data.lowStockProducts,
+              localizations: localizations,
+            ),
+            const SizedBox(height: 20),
+            QuickActionsWidget(localizations: localizations),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSalesDetailsDialog(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Today\'s Sales Details'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            // Add sales details content here
+            const ListTile(
+              leading: Icon(Icons.shopping_cart, color: Color(0xFF10B981)),
+              title: Text('Total Sales'),
+              subtitle: Text('ETB 12,500.00'),
+            ),
+            // Add more sales details...
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    );
+  }
+
+// Revenue Analytics Dialog
+  Widget _buildRevenueAnalyticsDialog(BuildContext context) {
+    return Dialog(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: Column(
+          children: [
+            const Text(
+              'Revenue Analytics',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: SalesAnalyticsWidget(
+                salesData: SalesSummary(
+                  todaysSales: 12500,
+                  todaysOrders: 45,
+                  totalSales: 125000,
+                  totalOrders: 450,
+                  weeklySales: 32500,
+                  weeklyOrders: 120,
+                ),
+                localizations: AppLocalizations.of(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLiveDateTimeWidget(BuildContext context) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final calendarType = ref.watch(calendarProvider);
+        final locale = ref.watch(languageProvider);
+        final currentTime = DateTime.now();
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.calendar_today_rounded,
+                color: Theme.of(context).colorScheme.primary,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              // In your dashboard_screen.dart, update this section:
+              // In your dashboard_screen.dart, update this section:
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      calendarType == CalendarType.ethiopian
+                          ? 'የኢትዮጵያ ቀን ቆጠራ'
+                          : 'Ethiopian Calendar',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      AppDateUtils.getCurrentFullDate(
+                          context, ref), // Add ref parameter
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onBackground,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      DateFormat('HH:mm:ss').format(currentTime),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                            fontFamily: 'RobotoMono',
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  calendarType == CalendarType.ethiopian ? 'ETH' : 'GREG',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDesktopLayout(
+      DashboardData data, AppLocalizations localizations) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Main Content - 70%
+        Expanded(
+          flex: 7,
+          child: Column(
+            children: [
+              _buildPerformanceOverview(data, localizations),
+              const SizedBox(height: 20),
+              RecentSalesList(
+                sales: data.todaysSales,
+                localizations: localizations,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 20),
+        // Sidebar - 30%
+        Expanded(
+          flex: 3,
+          child: Column(
+            children: [
+              StockAlertWidget(
+                products: data.lowStockProducts,
+                localizations: localizations,
+              ),
+              const SizedBox(height: 20),
+              QuickActionsWidget(localizations: localizations),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(
+      DashboardData data, AppLocalizations localizations) {
+    return Column(
+      children: [
+        _buildPerformanceOverview(data, localizations),
+        const SizedBox(height: 20),
+        RecentSalesList(
+          sales: data.todaysSales,
+          localizations: localizations,
+        ),
+        const SizedBox(height: 20),
+        StockAlertWidget(
+          products: data.lowStockProducts,
+          localizations: localizations,
+        ),
+        const SizedBox(height: 20),
+        QuickActionsWidget(localizations: localizations),
+      ],
+    );
+  }
+
+  Widget _buildPerformanceOverview(
+      DashboardData data, AppLocalizations localizations) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.analytics_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  localizations.translate('performanceOverview'),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 400;
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: isWide ? 2 : 1,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: isWide ? 3.5 : 2.5,
+                  children: [
+                    MetricCard(
+                      label: localizations.averageOrderValue,
+                      value:
+                          AppFormatters.formatCurrency(data.averageOrderValue),
+                      icon: Icons.shopping_cart_rounded,
+                      localizations: localizations,
+                    ),
+                    MetricCard(
+                      label: localizations.totalOrders,
+                      value: data.salesSummary.totalOrders.toString(),
+                      icon: Icons.receipt_long_rounded,
+                      localizations: localizations,
+                    ),
+                    MetricCard(
+                      label: localizations.translate('customersWithBalance'),
+                      value: (data.creditSummary['customersWithBalance'] ?? 0)
+                          .toString(),
+                      icon: Icons.people_alt_rounded,
+                      localizations: localizations,
+                    ),
+                    MetricCard(
+                      label: localizations.translate('overdueAmount'),
+                      value: AppFormatters.formatCurrency(
+                          data.creditSummary['overdueAmount'] ?? 0),
+                      icon: Icons.warning_amber_rounded,
+                      isWarning: (data.creditSummary['overdueAmount'] ?? 0) > 0,
+                      localizations: localizations,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInsightsSection(
+      DashboardData data, AppLocalizations localizations) {
+    return PerformanceInsightsWidget(
+      data: data,
+      localizations: localizations,
+    );
+  }
+}
+
+// Dashboard Data Model
+// In your dashboard_screen.dart - update DashboardData
+class DashboardData {
+  final SalesSummary salesSummary;
+  final Map<String, dynamic> creditSummary;
+  final List<Sale> todaysSales;
+  final List<Product> lowStockProducts;
+  final List<Product> totalProducts;
+  final List<Customer> allCustomers;
+  final double totalRevenue;
+  final double averageOrderValue;
+  final double dailyGrowth;
+  final DateTime timestamp;
+
+  DashboardData({
+    required this.salesSummary,
+    required this.creditSummary,
+    required this.todaysSales,
+    required this.lowStockProducts,
+    required this.totalProducts,
+    required this.allCustomers,
+    required this.totalRevenue,
+    required this.averageOrderValue,
+    required this.dailyGrowth,
+    required this.timestamp,
+  });
 }
 
 class DashboardErrorWidget extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;
-  final VoidCallback onCreateSample;
+  final AppLocalizations localizations;
 
   const DashboardErrorWidget({
     super.key,
     required this.error,
     required this.onRetry,
-    required this.onCreateSample,
+    required this.localizations,
   });
 
   @override
@@ -887,51 +725,39 @@ class DashboardErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline_rounded,
-                size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            const Text(
-              'Unable to load dashboard',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
-              ),
+            Icon(
+              Icons.error_outline_rounded,
+              size: 64,
+              color: Theme.of(context).colorScheme.outline,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
+            Text(
+              localizations.translate('errorLoadingData'),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 error.contains('DatabaseException')
-                    ? 'Database schema needs update. You can create sample data to explore the dashboard.'
+                    ? localizations.translate('databaseNeedsUpdate')
                     : error.length > 100
                         ? '${error.substring(0, 100)}...'
                         : error,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                 textAlign: TextAlign.center,
                 maxLines: 3,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FilledButton.icon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Try Again'),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: onCreateSample,
-                  icon: const Icon(Icons.data_exploration_rounded),
-                  label: const Text('Use Sample Data'),
-                ),
-              ],
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(localizations.translate('tryAgain')),
             ),
           ],
         ),
@@ -941,56 +767,277 @@ class DashboardErrorWidget extends StatelessWidget {
 }
 
 class DashboardShimmer extends StatelessWidget {
-  const DashboardShimmer({super.key});
+  final AppLocalizations localizations;
+
+  const DashboardShimmer({
+    super.key,
+    required this.localizations,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Stats Grid Shimmer
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 4,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.1,
-            children: List.generate(
-                4,
-                (index) => const LoadingShimmer(
-                      height: 100,
-                      borderRadius: 12,
-                    )),
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.4,
+              children: List.generate(
+                  4,
+                  (index) => const LoadingShimmer(
+                        height: 100,
+                        borderRadius: 16,
+                      )),
+            ),
           ),
-          const SizedBox(height: 20),
-          // Performance Overview Shimmer
-          const LoadingShimmer(height: 200, borderRadius: 16),
-          const SizedBox(height: 20),
-          // Content Area Shimmer
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Expanded(
-                flex: 2,
-                child: LoadingShimmer(height: 300, borderRadius: 16),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                flex: 1,
-                child: Column(
+        ),
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: LoadingShimmer(height: 200, borderRadius: 20),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const LoadingShimmer(height: 180, borderRadius: 20),
+                const SizedBox(height: 20),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    LoadingShimmer(height: 140, borderRadius: 16),
-                    SizedBox(height: 16),
-                    LoadingShimmer(height: 140, borderRadius: 16),
+                    const Expanded(
+                      flex: 2,
+                      child: LoadingShimmer(height: 300, borderRadius: 20),
+                    ),
+                    const SizedBox(width: 20),
+                    const Expanded(
+                      flex: 1,
+                      child: Column(
+                        children: [
+                          LoadingShimmer(height: 140, borderRadius: 20),
+                          SizedBox(height: 20),
+                          LoadingShimmer(height: 120, borderRadius: 20),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+// Add these new widgets to your dashboard_screen.dart
+
+class PerformanceInsightsWidget extends StatelessWidget {
+  final DashboardData data;
+  final AppLocalizations localizations;
+
+  const PerformanceInsightsWidget({
+    super.key,
+    required this.data,
+    required this.localizations,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final insights = _generateInsights(data);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.insights_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Performance Insights',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ...insights.map((insight) => _buildInsightItem(context, insight)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<DashboardInsight> _generateInsights(DashboardData data) {
+    final insights = <DashboardInsight>[];
+
+    // Sales performance insights
+    if (data.salesSummary.todaysSales >
+        data.salesSummary.weeklySales / 7 * 1.2) {
+      insights.add(DashboardInsight(
+        type: InsightType.positive,
+        title: 'Strong Sales Today',
+        message: 'Today\'s sales are 20% above daily average',
+        icon: Icons.trending_up_rounded,
+      ));
+    }
+
+    if (data.lowStockProducts.isNotEmpty) {
+      insights.add(DashboardInsight(
+        type: InsightType.warning,
+        title: 'Low Stock Alert',
+        message: '${data.lowStockProducts.length} products need restocking',
+        icon: Icons.inventory_2_rounded,
+      ));
+    }
+
+    // Credit risk insights
+    final overdueAmount = data.creditSummary['overdueAmount'] as double? ?? 0.0;
+    if (overdueAmount > 1000) {
+      insights.add(DashboardInsight(
+        type: InsightType.negative,
+        title: 'High Overdue Amount',
+        message: 'ETB ${overdueAmount.toStringAsFixed(0)} in overdue payments',
+        icon: Icons.warning_amber_rounded,
+      ));
+    }
+
+    // Customer growth insights
+    final newCustomers = _getNewCustomersCount(data);
+    if (newCustomers > 5) {
+      insights.add(DashboardInsight(
+        type: InsightType.positive,
+        title: 'Customer Growth',
+        message: '$newCustomers new customers this week',
+        icon: Icons.people_alt_rounded,
+      ));
+    }
+
+    return insights;
+  }
+
+  int _getNewCustomersCount(DashboardData data) {
+    // Calculate new customers from the last 7 days
+    final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+    return data.allCustomers
+        .where((customer) => customer.createdAt.isAfter(weekAgo))
+        .length;
+  }
+
+  Widget _buildInsightItem(BuildContext context, DashboardInsight insight) {
+    Color backgroundColor;
+    Color textColor;
+
+    switch (insight.type) {
+      case InsightType.positive:
+        backgroundColor = Colors.green.shade50;
+        textColor = Colors.green.shade800;
+        break;
+      case InsightType.warning:
+        backgroundColor = Colors.orange.shade50;
+        textColor = Colors.orange.shade800;
+        break;
+      case InsightType.negative:
+        backgroundColor = Colors.red.shade50;
+        textColor = Colors.red.shade800;
+        break;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: textColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: textColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(insight.icon, color: textColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  insight.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  insight.message,
+                  style: TextStyle(
+                    color: textColor.withOpacity(0.8),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+class DashboardInsight {
+  final InsightType type;
+  final String title;
+  final String message;
+  final IconData icon;
+
+  const DashboardInsight({
+    required this.type,
+    required this.title,
+    required this.message,
+    required this.icon,
+  });
+}
+
+enum InsightType {
+  positive,
+  warning,
+  negative,
 }

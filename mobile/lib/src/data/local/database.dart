@@ -1,9 +1,12 @@
+//src/data/local/database.dart
+import 'package:andalus_smart_pos/src/data/models/otp.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class AppDatabase {
   static const _databaseName = "andalus_pos.db";
-  static const _databaseVersion = 6; // Increment version to trigger migration
+  // static const _databaseVersion = 6; // Increment version to trigger migration
+  static const _databaseVersion = 8; // Increment version to trigger migration
 
   static Database? _database;
 
@@ -39,6 +42,28 @@ class AppDatabase {
     await _createAllTables(db);
   }
 
+  static Future<void> ensureOTPTable() async {
+    final db = await database;
+
+    try {
+      await db.execute('''
+      CREATE TABLE IF NOT EXISTS otps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        otp_id TEXT UNIQUE NOT NULL,
+        phone TEXT NOT NULL,
+        code TEXT NOT NULL,
+        type TEXT NOT NULL,
+        is_used INTEGER DEFAULT 0,
+        expires_at INTEGER NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+      print('✅ OTP table ensured');
+    } catch (e) {
+      print('❌ Error ensuring OTP table: $e');
+    }
+  }
+
   static Future<void> _onUpgrade(
       Database db, int oldVersion, int newVersion) async {
     print('Upgrading database from $oldVersion to $newVersion');
@@ -62,6 +87,89 @@ class AppDatabase {
 
     if (oldVersion < 6) {
       await _migrateToVersion6(db);
+    }
+    if (oldVersion < 7) {
+      await _migrateToVersion7(db);
+    }
+
+    if (oldVersion < 8) {
+      await _migrateToVersion8(db);
+    }
+  }
+
+  static Future<void> _migrateToVersion8(Database db) async {
+    print(
+        'Migrating to version 8 - Making email column nullable in users table');
+
+    try {
+      // Create a temporary table without the UNIQUE constraint on email
+      await db.execute('''
+      CREATE TABLE users_temp (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        phone TEXT UNIQUE NOT NULL,
+        email TEXT,
+        password_hash TEXT,
+        role TEXT NOT NULL DEFAULT 'cashier',
+        is_verified INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1,
+        business_id TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        last_login_at INTEGER
+      )
+    ''');
+
+      // Copy data from old table to new table
+      await db.execute('''
+      INSERT INTO users_temp 
+      SELECT * FROM users
+    ''');
+
+      // Drop old table
+      await db.execute('DROP TABLE users');
+
+      // Rename new table
+      await db.execute('ALTER TABLE users_temp RENAME TO users');
+
+      print('✅ Users table updated successfully - email is now nullable');
+    } catch (e) {
+      print('❌ Error in version 8 migration: $e');
+      // If migration fails, the app should still work
+    }
+  }
+
+  static Future<void> _migrateToVersion7(Database db) async {
+    print('Migrating to version 7 - Recreating OTP table with correct schema');
+
+    try {
+      // Simply drop and recreate the OTP table
+      await db.execute('DROP TABLE IF EXISTS otps');
+
+      await db.execute('''
+      CREATE TABLE otps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        otp_id TEXT UNIQUE NOT NULL,
+        phone TEXT NOT NULL,
+        code TEXT NOT NULL,
+        type TEXT NOT NULL,
+        is_used INTEGER DEFAULT 0,
+        expires_at INTEGER NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+
+      print('✅ OTP table recreated successfully in version 7 migration');
+
+      // Add any indexes for better performance
+      await db
+          .execute('CREATE INDEX IF NOT EXISTS idx_otp_phone ON otps(phone)');
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_otp_expires ON otps(expires_at)');
+    } catch (e) {
+      print('❌ Error in version 7 migration: $e');
+      rethrow;
     }
   }
 
@@ -124,7 +232,7 @@ class AppDatabase {
         user_id TEXT UNIQUE NOT NULL,
         name TEXT NOT NULL,
         phone TEXT UNIQUE NOT NULL,
-        email TEXT UNIQUE,
+        email TEXT,
         password_hash TEXT,
         role TEXT NOT NULL DEFAULT 'cashier',
         is_verified INTEGER DEFAULT 0,
@@ -174,6 +282,37 @@ class AppDatabase {
   ''');
 
     print('User management tables created successfully');
+  }
+
+// Add this to lib/src/data/local/database.dart
+  static Future<void> debugOTPTable() async {
+    final db = await database;
+
+    try {
+      // Check if table exists
+      final tableInfo = await db.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='otps'");
+      print('📋 OTP table exists: ${tableInfo.isNotEmpty}');
+
+      if (tableInfo.isNotEmpty) {
+        // Check table schema
+        final schema = await db.rawQuery("PRAGMA table_info(otps)");
+        print('🔍 OTP Table Schema:');
+        for (var column in schema) {
+          print('   ${column['name']} - ${column['type']}');
+        }
+
+        // Check all OTPs in table
+        final allOtps = await db.query('otps');
+        print('📊 Total OTPs in database: ${allOtps.length}');
+        for (var otp in allOtps) {
+          print(
+              '   OTP: ${otp['otp_id']} - ${otp['phone']} - ${otp['code']} - Used: ${otp['is_used']}');
+        }
+      }
+    } catch (e) {
+      print('❌ Error debugging OTP table: $e');
+    }
   }
 
   // ... rest of your existing methods remain the same
@@ -333,6 +472,83 @@ class AppDatabase {
         FOREIGN KEY (customer_id) REFERENCES customers (id) ON DELETE CASCADE
       )
     ''');
+  }
+
+// Add to lib/src/data/local/database.dart
+  static Future<void> debugUsersTable() async {
+    final db = await database;
+
+    try {
+      final users = await db.query('users');
+      print('👥 Total users in database: ${users.length}');
+
+      for (var user in users) {
+        print(
+            '📄 User: ${user['user_id']} - ${user['name']} - ${user['phone']} - ${user['role']} - Active: ${user['is_active']}');
+      }
+
+      // Check specifically for our test user
+      final testUser = await db
+          .query('users', where: 'phone = ?', whereArgs: ['+251911223344']);
+      print('🔍 Test user query result: ${testUser.length} users found');
+    } catch (e) {
+      print('❌ Error debugging users table: $e');
+    }
+  }
+
+// Add to lib/src/data/local/database.dart
+  static Future<void> verifyOTPTable() async {
+    final db = await database;
+
+    try {
+      // Check if table exists
+      final tableInfo = await db.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='otps'");
+
+      if (tableInfo.isEmpty) {
+        print('❌ OTP table does not exist after migration!');
+        return;
+      }
+
+      print('✅ OTP table exists');
+
+      // Check schema
+      final schema = await db.rawQuery("PRAGMA table_info(otps)");
+      final expectedColumns = [
+        'id',
+        'otp_id',
+        'phone',
+        'code',
+        'type',
+        'is_used',
+        'expires_at',
+        'created_at'
+      ];
+      final actualColumns = schema.map((col) => col['name'] as String).toList();
+
+      print('📋 OTP Table columns: $actualColumns');
+
+      // Test insert and query
+      final testOTP = OTP.create(phone: '+251911223344', type: 'test');
+      await db.insert('otps', testOTP.toMap());
+
+      final retrieved = await db.query(
+        'otps',
+        where: 'phone = ? AND code = ?',
+        whereArgs: [testOTP.phone, testOTP.code],
+      );
+
+      if (retrieved.isNotEmpty) {
+        print('✅ OTP table working correctly - can insert and query');
+      } else {
+        print('❌ OTP table not working - cannot retrieve inserted data');
+      }
+
+      // Clean up test data
+      await db.delete('otps', where: 'phone = ?', whereArgs: [testOTP.phone]);
+    } catch (e) {
+      print('❌ Error verifying OTP table: $e');
+    }
   }
 
   // Helper methods

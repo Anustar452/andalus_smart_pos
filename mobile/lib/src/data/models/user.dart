@@ -1,6 +1,7 @@
+//src/data/models/user.dart
 class User {
   final String id;
-  final String email;
+  final String? email;
   final String name;
   final String phone;
   final UserRole role;

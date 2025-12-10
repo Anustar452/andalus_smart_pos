@@ -1,3 +1,4 @@
+//src/data/models/business.dart
 class BusinessType {
   final String id;
   final String name;

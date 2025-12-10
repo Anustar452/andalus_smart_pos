@@ -1,3 +1,4 @@
+//src/data/models/subscription.dart
 class Subscription {
   final String id;
   final String businessId;
@@ -55,7 +56,7 @@ class Subscription {
       id: map['subscription_id'],
       businessId: map['business_id'],
       userId: map['user_id'],
-      plan: SubscriptionPlan.fromString(map['plan']), // Use fromString method
+      plan: SubscriptionPlan.getById(map['plan']), // Use getById method
       billingCycle:
           BillingCycle.values.firstWhere((e) => e.name == map['billing_cycle']),
       status:
@@ -85,6 +86,8 @@ class Subscription {
     return 'Active';
   }
 
+  get expiryDate => endDate;
+
   Subscription renew({String? paymentReference}) {
     final now = DateTime.now();
     DateTime newEndDate;
@@ -112,8 +115,13 @@ class Subscription {
       updatedAt: now,
     );
   }
+
+// Add to your existing subscription model
+
+// Update Subscription class
 }
 
+// Make sure your SubscriptionPlan class has premium defined:
 class SubscriptionPlan {
   final String id;
   final String name;
@@ -121,9 +129,6 @@ class SubscriptionPlan {
   final double monthlyPrice;
   final double yearlyPrice;
   final List<String> features;
-  final int maxProducts;
-  final int maxUsers;
-  final int maxStores;
 
   const SubscriptionPlan({
     required this.id,
@@ -132,83 +137,61 @@ class SubscriptionPlan {
     required this.monthlyPrice,
     required this.yearlyPrice,
     required this.features,
-    required this.maxProducts,
-    required this.maxUsers,
-    required this.maxStores,
   });
 
-  static const basic = SubscriptionPlan(
+  // Add these static instances
+  static const SubscriptionPlan basic = SubscriptionPlan(
     id: 'basic',
     name: 'Basic',
-    description: 'Perfect for small shops and startups',
+    description: 'Perfect for small businesses',
     monthlyPrice: 299,
-    yearlyPrice: 2990, // 2 months free
+    yearlyPrice: 2990,
     features: [
       'Up to 100 products',
       'Basic sales reports',
-      'Single device',
-      'Email support',
-      'Basic inventory management',
+      'Customer management',
+      'Receipt printing',
     ],
-    maxProducts: 100,
-    maxUsers: 1,
-    maxStores: 1,
   );
 
-  static const professional = SubscriptionPlan(
+  static const SubscriptionPlan professional = SubscriptionPlan(
     id: 'professional',
     name: 'Professional',
-    description: 'For growing businesses with multiple users',
-    monthlyPrice: 799,
-    yearlyPrice: 7990, // 2 months free
+    description: 'Ideal for growing businesses',
+    monthlyPrice: 599,
+    yearlyPrice: 5990,
+    features: [
+      'Up to 1000 products',
+      'Advanced analytics',
+      'Inventory management',
+      'Multi-user support',
+      'Customer credit system',
+    ],
+  );
+
+  static const SubscriptionPlan premium = SubscriptionPlan(
+    // ADD THIS
+    id: 'premium',
+    name: 'Premium',
+    description: 'For large enterprises',
+    monthlyPrice: 999,
+    yearlyPrice: 9990,
     features: [
       'Unlimited products',
-      'Advanced analytics',
-      'Multi-device support',
-      'Priority support',
-      'Inventory management',
-      'Customer management',
-      'Basic reporting',
-    ],
-    maxProducts: -1, // Unlimited
-    maxUsers: 3,
-    maxStores: 3,
-  );
-
-  static const enterprise = SubscriptionPlan(
-    id: 'enterprise',
-    name: 'Enterprise',
-    description: 'Enterprise-grade features for large businesses',
-    monthlyPrice: 1499,
-    yearlyPrice: 14990, // 2 months free
-    features: [
-      'All Professional features',
-      'Custom branding',
-      'API access',
-      'Dedicated account manager',
       'Advanced reporting',
-      'Multi-store management',
-      'Priority phone support',
+      'Priority support',
+      'Custom integrations',
+      'Multi-branch support',
+      'API access',
     ],
-    maxProducts: -1, // Unlimited
-    maxUsers: -1, // Unlimited
-    maxStores: -1, // Unlimited
   );
 
-  static List<SubscriptionPlan> get all => [basic, professional, enterprise];
+  // Add this method to get all plans
+  static List<SubscriptionPlan> get all => [basic, professional, premium];
 
-  // Add a method to convert string to SubscriptionPlan
-  static SubscriptionPlan fromString(String planId) {
-    switch (planId) {
-      case 'basic':
-        return basic;
-      case 'professional':
-        return professional;
-      case 'enterprise':
-        return enterprise;
-      default:
-        return basic; // Default fallback
-    }
+  // Helper method to get plan by ID
+  static SubscriptionPlan getById(String id) {
+    return all.firstWhere((plan) => plan.id == id, orElse: () => basic);
   }
 
   double getPrice(BillingCycle cycle) {
@@ -217,17 +200,13 @@ class SubscriptionPlan {
 
   String getFormattedPrice(BillingCycle cycle) {
     final price = getPrice(cycle);
-    return 'ETB ${price.toStringAsFixed(0)}${cycle == BillingCycle.monthly ? '/month' : '/year'}';
+    return 'ETB ${price.toStringAsFixed(0)}/${cycle == BillingCycle.monthly ? 'month' : 'year'}';
   }
 
   String get savingsInfo {
     final yearlySavings = (monthlyPrice * 12) - yearlyPrice;
-    return 'Save ETB ${yearlySavings.toStringAsFixed(0)} with yearly billing';
+    return 'Save ETB ${yearlySavings.toStringAsFixed(0)} per year';
   }
-
-  bool allowsUnlimitedProducts() => maxProducts == -1;
-  bool allowsUnlimitedUsers() => maxUsers == -1;
-  bool allowsUnlimitedStores() => maxStores == -1;
 }
 
 enum BillingCycle {
@@ -238,6 +217,13 @@ enum BillingCycle {
 
   const BillingCycle(this.displayName);
 }
+
+// enum SubscriptionStatus {
+//   pending,
+//   active,
+//   expired,
+//   canceled,
+// }
 
 enum SubscriptionStatus {
   active('Active'),

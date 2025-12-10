@@ -1,3 +1,4 @@
+//src/data/models/otp.dart
 class OTP {
   final String id;
   final String phone;

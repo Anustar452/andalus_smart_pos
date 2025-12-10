@@ -1,11 +1,16 @@
-import 'package:andalus_smart_pos/src/localization/app_localizations.dart';
+//src/ui/screens/account_setting_screen.dart
+import 'package:andalus_smart_pos/src/config/app_theme.dart';
+import 'package:andalus_smart_pos/src/config/font_theme.dart';
+import 'package:andalus_smart_pos/src/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:andalus_smart_pos/src/data/models/settings.dart';
-import 'package:andalus_smart_pos/src/providers/settings_provider.dart';
+import 'package:andalus_smart_pos/src/localization/app_localizations.dart';
+import 'package:andalus_smart_pos/src/providers/auth_provider.dart';
 import 'package:andalus_smart_pos/src/providers/theme_provider.dart';
 import 'package:andalus_smart_pos/src/providers/language_provider.dart';
-import 'package:andalus_smart_pos/src/providers/auth_provider.dart';
+// import 'package:andalus_smart_pos/src/config/theme/font_theme.dart';
+
+import 'package:andalus_smart_pos/src/utils/calendar_utils.dart';
 import 'package:andalus_smart_pos/src/data/models/user.dart';
 import 'package:andalus_smart_pos/src/ui/screens/auth/phone_login_screen.dart';
 import 'package:andalus_smart_pos/src/widgets/common/custom_card.dart';
@@ -19,7 +24,6 @@ class AccountSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
@@ -27,137 +31,42 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  late AppSettings _currentSettings;
-  bool _hasChanges = false;
-  bool _isInitialized = false;
-  bool _isEditingProfile = false;
+  bool _isEditing = false;
   bool _isChangingPassword = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeData();
+    _loadUserData();
   }
 
-  void _initializeData() {
-    // Load user data
+  void _loadUserData() {
     final authState = ref.read(authProvider);
     final user = authState.user;
+
     if (user != null) {
       _nameController.text = user.name;
       _phoneController.text = user.phone;
       _emailController.text = user.email ?? '';
     }
-
-    // Load settings
-    final settingsAsync = ref.read(settingsProvider);
-    settingsAsync.when(
-      data: (settings) {
-        if (mounted) {
-          setState(() {
-            _currentSettings = settings;
-            _isInitialized = true;
-          });
-        }
-      },
-      loading: () {
-        if (mounted) {
-          setState(() {
-            _currentSettings = _getDefaultSettings();
-            _isInitialized = true;
-          });
-        }
-      },
-      error: (error, stack) {
-        if (mounted) {
-          setState(() {
-            _currentSettings = _getDefaultSettings();
-            _isInitialized = true;
-          });
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading settings: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      },
-    );
   }
 
-  AppSettings _getDefaultSettings() {
-    return AppSettings(
-      shopName: 'Andalus Smart POS',
-      shopNameAm: 'አንዳሉስ ማርቲን ፖስ',
-      address: 'Addis Ababa, Ethiopia',
-      phone: '+251 911 234 567',
-      tinNumber: 'TIN-123456789',
-      currency: 'ETB',
-      enableTax: false,
-      taxRate: 0.15,
-      enableDiscounts: true,
-      autoPrintReceipts: false,
-      defaultPaymentMethod: 'cash',
-      enableSync: true,
-      syncInterval: 5,
-      enableCreditSystem: true,
-      defaultCreditLimit: 1000.0,
-      defaultPaymentTerms: '30',
-      enableCustomerSelection: true,
-      lowStockNotifications: true,
-      lowStockThreshold: 10,
-    );
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 
-  void _updateSetting<T>(T Function(AppSettings) update) {
-    if (!_isInitialized) return;
+  void _toggleEdit() {
     setState(() {
-      _currentSettings = update(_currentSettings) as AppSettings;
-      _hasChanges = true;
-    });
-  }
-
-  Future<void> _saveSettings() async {
-    if (!_isInitialized) return;
-    if (_formKey.currentState!.validate()) {
-      try {
-        final notifier = ref.read(settingsProvider.notifier);
-        await notifier.updateSettings(_currentSettings);
-        setState(() => _hasChanges = false);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Settings saved successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error saving settings: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  void _toggleEditProfile() {
-    setState(() {
-      _isEditingProfile = !_isEditingProfile;
-      if (!_isEditingProfile) {
-        // Reset changes
-        final authState = ref.read(authProvider);
-        final user = authState.user;
-        if (user != null) {
-          _nameController.text = user.name;
-          _phoneController.text = user.phone;
-          _emailController.text = user.email ?? '';
-        }
+      _isEditing = !_isEditing;
+      if (!_isEditing) {
+        _loadUserData();
       }
     });
   }
@@ -186,15 +95,13 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
       email: _emailController.text.isEmpty ? null : _emailController.text,
     );
 
-    // Update user in provider/database
-    // await ref.read(authProvider.notifier).updateProfile(updatedUser);
-
-    setState(() => _isEditingProfile = false);
+    setState(() => _isEditing = false);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully!'),
+        SnackBar(
+          content:
+              Text(AppLocalizations.of(context).translate('settingsSaved')),
           backgroundColor: Colors.green,
         ),
       );
@@ -203,24 +110,28 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
 
   Future<void> _changePassword() async {
     if (_newPasswordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('New passwords do not match'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('New passwords do not match'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
     // TODO: Implement password change logic
     _togglePasswordChange();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Password changed successfully'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password changed successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   void _logout() {
@@ -262,25 +173,15 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
     final authState = ref.watch(authProvider);
     final themeMode = ref.watch(themeProvider);
     final locale = ref.watch(languageProvider);
+    final fontTheme = ref.watch(fontThemeProvider);
     final localizations = AppLocalizations.of(context);
     final user = authState.user;
 
-    if (!_isInitialized) {
-      return _buildLoadingState();
-    }
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Account & Settings'),
-        backgroundColor: const Color(0xFF10B981),
-        foregroundColor: Colors.white,
+        title: Text(localizations.translate('Account Settings')),
         actions: [
-          if (_hasChanges && !_isEditingProfile && !_isChangingPassword)
-            TextButton(
-              onPressed: _saveSettings,
-              child: const Text('Save', style: TextStyle(color: Colors.white)),
-            ),
-          if (_isEditingProfile) ...[
+          if (_isEditing) ...[
             IconButton(
               icon: const Icon(Icons.save),
               onPressed: _updateProfile,
@@ -288,100 +189,53 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.cancel),
-              onPressed: _toggleEditProfile,
+              onPressed: _toggleEdit,
               tooltip: 'Cancel',
             ),
           ],
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // User Profile Section
-            _buildProfileSection(user, localizations),
-            const SizedBox(height: 16),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // User Profile Section
+          _buildProfileSection(user, localizations),
+          const SizedBox(height: 16),
 
-            // Appearance & Language
-            _buildAppearanceSection(themeMode, locale, localizations),
-            const SizedBox(height: 16),
+          // Calendar Settings
+          _buildCalendarSection(localizations),
+          const SizedBox(height: 16),
 
-            // Business Settings
-            _buildBusinessSettings(localizations),
-            const SizedBox(height: 16),
+          // Language Settings
+          _buildLanguageSection(locale, localizations),
+          const SizedBox(height: 16),
 
-            // POS Settings
-            _buildPosSettings(),
-            const SizedBox(height: 16),
+          // Font Settings
+          _buildFontSettingsSection(fontTheme, localizations),
+          const SizedBox(height: 16),
 
-            // Credit Settings
-            _buildCreditSettings(),
-            const SizedBox(height: 16),
+          // Theme Settings
+          _buildThemeSection(themeMode, localizations),
+          const SizedBox(height: 16),
 
-            // Sync Settings
-            _buildSyncSettings(),
-            const SizedBox(height: 16),
+          // Security Section
+          _buildSecuritySection(localizations),
+          const SizedBox(height: 16),
 
-            // Advanced Settings
-            _buildAdvancedSettings(),
-            const SizedBox(height: 16),
-
-            // Logout Section
-            _buildLogoutSection(localizations),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Account & Settings'),
-        backgroundColor: const Color(0xFF10B981),
-        foregroundColor: Colors.white,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(color: Color(0xFF10B981)),
-            const SizedBox(height: 16),
-            const Text('Loading...'),
-          ],
-        ),
+          // Logout Section
+          _buildLogoutSection(localizations),
+        ],
       ),
     );
   }
 
   Widget _buildProfileSection(User? user, AppLocalizations localizations) {
     return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.person, color: Color(0xFF10B981)),
-              const SizedBox(width: 12),
-              Text(
-                'Profile',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const Spacer(),
-              if (!_isEditingProfile && !_isChangingPassword)
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: _toggleEditProfile,
-                  tooltip: 'Edit Profile',
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          if (!_isEditingProfile) ...[
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               children: [
                 const CircleAvatar(
@@ -418,29 +272,395 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
                     ],
                   ),
                 ),
+                if (!_isEditing && !_isChangingPassword)
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: _toggleEdit,
+                    tooltip: 'Edit Profile',
+                  ),
               ],
             ),
-          ],
-
-          if (_isEditingProfile) _buildProfileForm(),
-
-          // Password Change Section
-          if (_isChangingPassword) ...[
-            const Divider(),
-            _buildPasswordChangeForm(),
-          ],
-
-          if (!_isEditingProfile && !_isChangingPassword) ...[
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: _togglePasswordChange,
-                child: const Text('Change Password'),
+            if (_isEditing) _buildProfileForm(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalendarSection(AppLocalizations localizations) {
+    final currentCalendar = CalendarUtils.currentCalendar;
+
+    return CustomCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, color: Color(0xFF10B981)),
+                const SizedBox(width: 12),
+                Text(
+                  'Calendar System',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Choose your preferred calendar system for date displays throughout the app.',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildCalendarOption(
+                  'Gregorian',
+                  CalendarType.gregorian,
+                  currentCalendar,
+                  Icons.calendar_today,
+                ),
+                _buildCalendarOption(
+                  'Ethiopian',
+                  CalendarType.ethiopian,
+                  currentCalendar,
+                  Icons.language,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Current date: ${AppDateUtils.formatFullDate(DateTime.now())}',
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF10B981),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCalendarOption(
+    String label,
+    CalendarType type,
+    CalendarType currentType,
+    IconData icon,
+  ) {
+    final isSelected = currentType == type;
+
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16),
+          const SizedBox(width: 6),
+          Text(label),
         ],
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        CalendarUtils.setCalendarType(type);
+        setState(() {});
+      },
+      backgroundColor: Colors.grey.shade100,
+      selectedColor: const Color(0xFF10B981).withOpacity(0.2),
+      checkmarkColor: const Color(0xFF10B981),
+      labelStyle: TextStyle(
+        color: isSelected ? const Color(0xFF10B981) : Colors.grey.shade700,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+    );
+  }
+
+  Widget _buildLanguageSection(Locale locale, AppLocalizations localizations) {
+    return CustomCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.language, color: Color(0xFF10B981)),
+                const SizedBox(width: 12),
+                Text(
+                  localizations.translate('language'),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<Locale>(
+              value: locale,
+              decoration: InputDecoration(
+                labelText: 'App Language',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: Locale('en'),
+                  child: Text('English'),
+                ),
+                DropdownMenuItem(
+                  value: Locale('am'),
+                  child: Text('አማርኛ'),
+                ),
+              ],
+              onChanged: (newLocale) {
+                if (newLocale != null) {
+                  ref
+                      .read(languageProvider.notifier)
+                      .setLanguage(newLocale.languageCode);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFontSettingsSection(
+      FontTheme fontTheme, AppLocalizations localizations) {
+    return CustomCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.font_download, color: Color(0xFF10B981)),
+                const SizedBox(width: 12),
+                Text(
+                  'Font Settings',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // English Font
+            _buildFontSelector(
+              'English Font',
+              fontTheme.englishFont,
+              AppFontFamily.values,
+              (font) =>
+                  ref.read(fontThemeProvider.notifier).updateEnglishFont(font),
+            ),
+            const SizedBox(height: 16),
+
+            // Amharic Font
+            _buildFontSelector(
+              'Amharic Font',
+              fontTheme.amharicFont,
+              [AppFontFamily.notoSansEthiopic, AppFontFamily.AbyssinicaSIL],
+              (font) =>
+                  ref.read(fontThemeProvider.notifier).updateAmharicFont(font),
+            ),
+            const SizedBox(height: 16),
+
+            // Font Size Scaling
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Font Size Scale',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      '${(fontTheme.fontSizeScale * 100).toInt()}%',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF10B981),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Slider(
+                  value: fontTheme.fontSizeScale,
+                  min: 0.8,
+                  max: 1.5,
+                  divisions: 7,
+                  onChanged: (value) {
+                    ref.read(fontThemeProvider.notifier).updateFontScale(value);
+                  },
+                  activeColor: const Color(0xFF10B981),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    Text('Smaller', style: TextStyle(fontSize: 12)),
+                    Text('Larger', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFontSelector(
+    String label,
+    AppFontFamily currentFont,
+    List<AppFontFamily> options,
+    Function(AppFontFamily) onChanged,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: options.map((font) {
+            final isSelected = currentFont == font;
+            return FilterChip(
+              label: Text(font.name),
+              selected: isSelected,
+              onSelected: (selected) => onChanged(font),
+              backgroundColor: Colors.grey.shade100,
+              selectedColor: const Color(0xFF10B981).withOpacity(0.2),
+              checkmarkColor: const Color(0xFF10B981),
+              labelStyle: TextStyle(
+                color:
+                    isSelected ? const Color(0xFF10B981) : Colors.grey.shade700,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThemeSection(
+      ThemeMode themeMode, AppLocalizations localizations) {
+    return CustomCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.palette, color: Color(0xFF10B981)),
+                const SizedBox(width: 12),
+                Text(
+                  localizations.translate('themeMode'),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<ThemeMode>(
+              value: themeMode,
+              decoration: InputDecoration(
+                labelText: 'Theme Mode',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: ThemeMode.light,
+                  child: Text(localizations.translate('light')),
+                ),
+                DropdownMenuItem(
+                  value: ThemeMode.dark,
+                  child: Text(localizations.translate('dark')),
+                ),
+                DropdownMenuItem(
+                  value: ThemeMode.system,
+                  child: Text(localizations.translate('systemDefault')),
+                ),
+              ],
+              onChanged: (newMode) {
+                if (newMode != null) {
+                  ref.read(themeProvider.notifier).setTheme(newMode);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecuritySection(AppLocalizations localizations) {
+    return CustomCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Security',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            if (_isChangingPassword) ...[
+              _buildPasswordChangeForm(),
+              const SizedBox(height: 16),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _isChangingPassword
+                    ? _changePassword
+                    : _togglePasswordChange,
+                child: Text(_isChangingPassword
+                    ? 'Change Password'
+                    : 'Change Password'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutSection(AppLocalizations localizations) {
+    return CustomCard(
+      backgroundColor: Colors.red.shade50,
+      child: ListTile(
+        leading: Icon(Icons.logout, color: Colors.red.shade600),
+        title: Text(
+          'Logout',
+          style: TextStyle(
+            color: Colors.red.shade700,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        trailing: Icon(Icons.arrow_forward, color: Colors.red.shade600),
+        onTap: _logout,
       ),
     );
   }
@@ -454,12 +674,6 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
             labelText: 'Full Name',
             border: OutlineInputBorder(),
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Name is required';
-            }
-            return null;
-          },
         ),
         const SizedBox(height: 12),
         TextFormField(
@@ -469,12 +683,6 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
             border: OutlineInputBorder(),
           ),
           keyboardType: TextInputType.phone,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Phone number is required';
-            }
-            return null;
-          },
         ),
         const SizedBox(height: 12),
         TextFormField(
@@ -518,466 +726,7 @@ class _AccountSettingsScreenState extends ConsumerState<AccountSettingsScreen> {
           ),
           obscureText: true,
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _changePassword,
-                child: const Text('Update Password'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _togglePasswordChange,
-                child: const Text('Cancel'),
-              ),
-            ),
-          ],
-        ),
       ],
-    );
-  }
-
-  // ... Include all the existing settings building methods from your SettingsScreen
-  // _buildAppearanceSection, _buildBusinessSettings, _buildPosSettings, etc.
-  // Copy these methods exactly as they are in your current SettingsScreen
-
-  Widget _buildAppearanceSection(
-      ThemeMode themeMode, Locale locale, AppLocalizations localizations) {
-    return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.palette, color: Color(0xFF10B981)),
-              const SizedBox(width: 12),
-              Text(
-                localizations.appearanceLanguage,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ListTile(
-            leading: const Icon(Icons.dark_mode),
-            title: Text(localizations.themeMode),
-            subtitle: Text(_getThemeModeText(themeMode, localizations)),
-            trailing: DropdownButton<ThemeMode>(
-              value: themeMode,
-              onChanged: (newMode) {
-                if (newMode != null) {
-                  ref.read(themeProvider.notifier).setTheme(newMode);
-                }
-              },
-              items: ThemeMode.values.map((mode) {
-                return DropdownMenuItem(
-                  value: mode,
-                  child: Text(_getThemeModeText(mode, localizations)),
-                );
-              }).toList(),
-            ),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: Text(localizations.language),
-            subtitle: Text(_getLanguageText(locale, localizations)),
-            trailing: DropdownButton<Locale>(
-              value: locale,
-              onChanged: (newLocale) {
-                if (newLocale != null) {
-                  ref
-                      .read(languageProvider.notifier)
-                      .setLanguage(newLocale.languageCode);
-                }
-              },
-              items: const [
-                DropdownMenuItem(
-                  value: Locale('en'),
-                  child: Text('English'),
-                ),
-                DropdownMenuItem(
-                  value: Locale('am'),
-                  child: Text('አማርኛ'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _getThemeModeText(ThemeMode mode, AppLocalizations localizations) {
-    switch (mode) {
-      case ThemeMode.light:
-        return localizations.light;
-      case ThemeMode.dark:
-        return localizations.dark;
-      case ThemeMode.system:
-        return localizations.systemDefault;
-    }
-  }
-
-  String _getLanguageText(Locale locale, AppLocalizations localizations) {
-    return locale.languageCode == 'en'
-        ? localizations.english
-        : localizations.amharic;
-  }
-
-  Widget _buildBusinessSettings(AppLocalizations localizations) {
-    return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.business, color: Color(0xFF10B981)),
-              const SizedBox(width: 12),
-              Text(
-                localizations.businessInformation,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            label: localizations.shopNameEnglish,
-            value: _currentSettings.shopName,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(shopName: value)),
-          ),
-          const SizedBox(height: 12),
-          _buildTextField(
-            label: localizations.shopNameAmharic,
-            value: _currentSettings.shopNameAm,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(shopNameAm: value)),
-          ),
-          const SizedBox(height: 12),
-          _buildTextField(
-            label: localizations.address,
-            value: _currentSettings.address,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(address: value)),
-          ),
-          const SizedBox(height: 12),
-          _buildTextField(
-            label: localizations.phone,
-            value: _currentSettings.phone,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(phone: value)),
-          ),
-          const SizedBox(height: 12),
-          _buildTextField(
-            label: localizations.tinNumber,
-            value: _currentSettings.tinNumber,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(tinNumber: value)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String label,
-    required String value,
-    required Function(String) onChanged,
-    TextInputType? keyboardType,
-  }) {
-    return TextFormField(
-      initialValue: value,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-      keyboardType: keyboardType,
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildPosSettings() {
-    return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.point_of_sale, color: Color(0xFF10B981)),
-              const SizedBox(width: 12),
-              const Text(
-                'POS Settings',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSwitch(
-            title: 'Auto Print Receipts',
-            value: _currentSettings.autoPrintReceipts,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(autoPrintReceipts: value)),
-          ),
-          _buildSwitch(
-            title: 'Enable Customer Selection',
-            value: _currentSettings.enableCustomerSelection,
-            onChanged: (value) => _updateSetting(
-                (s) => s.copyWith(enableCustomerSelection: value)),
-          ),
-          const SizedBox(height: 12),
-          _buildDropdown(
-            label: 'Default Payment Method',
-            value: _currentSettings.defaultPaymentMethod,
-            items: const ['cash', 'telebirr', 'card', 'bank_transfer'],
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(defaultPaymentMethod: value!)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSwitch({
-    required String title,
-    required bool value,
-    required Function(bool) onChanged,
-  }) {
-    return SwitchListTile(
-      title: Text(title),
-      value: value,
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildDropdown({
-    required String label,
-    required String value,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-      items: items.map((item) {
-        return DropdownMenuItem(
-          value: item,
-          child: Text(item),
-        );
-      }).toList(),
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildCreditSettings() {
-    return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.credit_card, color: Color(0xFF10B981)),
-              const SizedBox(width: 12),
-              const Text(
-                'Credit Settings',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSwitch(
-            title: 'Enable Credit System',
-            value: _currentSettings.enableCreditSystem,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(enableCreditSystem: value)),
-          ),
-          if (_currentSettings.enableCreditSystem) ...[
-            const SizedBox(height: 12),
-            _buildTextField(
-              label: 'Default Credit Limit (ETB)',
-              value: _currentSettings.defaultCreditLimit.toString(),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                final limit = double.tryParse(value) ?? 1000.0;
-                _updateSetting((s) => s.copyWith(defaultCreditLimit: limit));
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildDropdown(
-              label: 'Default Payment Terms (Days)',
-              value: _currentSettings.defaultPaymentTerms,
-              items: const ['7', '15', '30', '45', '60'],
-              onChanged: (value) => _updateSetting(
-                  (s) => s.copyWith(defaultPaymentTerms: value!)),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSyncSettings() {
-    return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.sync, color: Color(0xFF10B981)),
-              const SizedBox(width: 12),
-              const Text(
-                'Sync Settings',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSwitch(
-            title: 'Enable Data Sync',
-            value: _currentSettings.enableSync,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(enableSync: value)),
-          ),
-          if (_currentSettings.enableSync) ...[
-            const SizedBox(height: 12),
-            _buildDropdown(
-              label: 'Sync Interval (minutes)',
-              value: _currentSettings.syncInterval.toString(),
-              items: const ['1', '5', '15', '30', '60'],
-              onChanged: (value) => _updateSetting(
-                  (s) => s.copyWith(syncInterval: int.parse(value!))),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAdvancedSettings() {
-    return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.settings, color: Color(0xFF10B981)),
-              const SizedBox(width: 12),
-              const Text(
-                'Advanced Settings',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSwitch(
-            title: 'Enable Tax',
-            value: _currentSettings.enableTax,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(enableTax: value)),
-          ),
-          if (_currentSettings.enableTax) ...[
-            const SizedBox(height: 12),
-            _buildTextField(
-              label: 'Tax Rate (%)',
-              value: (_currentSettings.taxRate * 100).toString(),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                final rate = double.tryParse(value) ?? 15.0;
-                _updateSetting((s) => s.copyWith(taxRate: rate / 100));
-              },
-            ),
-          ],
-          _buildSwitch(
-            title: 'Enable Discounts',
-            value: _currentSettings.enableDiscounts,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(enableDiscounts: value)),
-          ),
-          _buildSwitch(
-            title: 'Low Stock Notifications',
-            value: _currentSettings.lowStockNotifications,
-            onChanged: (value) =>
-                _updateSetting((s) => s.copyWith(lowStockNotifications: value)),
-          ),
-          if (_currentSettings.lowStockNotifications) ...[
-            const SizedBox(height: 12),
-            _buildTextField(
-              label: 'Low Stock Threshold',
-              value: _currentSettings.lowStockThreshold.toString(),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                final threshold = int.tryParse(value) ?? 10;
-                _updateSetting((s) => s.copyWith(lowStockThreshold: threshold));
-              },
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLogoutSection(AppLocalizations localizations) {
-    return CustomCard(
-      backgroundColor: Colors.red.shade50,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.logout, color: Colors.red.shade600),
-              const SizedBox(width: 12),
-              Text(
-                'Logout',
-                style: TextStyle(
-                  color: Colors.red.shade700,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Sign out from your account',
-            style: TextStyle(color: Colors.red.shade600),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: _logout,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: BorderSide(color: Colors.red.shade300),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text('Logout'),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

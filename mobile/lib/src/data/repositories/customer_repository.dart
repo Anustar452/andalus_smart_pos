@@ -323,34 +323,40 @@ class CustomerRepository {
 
   Future<void> createSampleCustomers() async {
     final db = await _db;
+
+    // Clear existing sample customers
+    await db.delete('customers',
+        where: 'local_id LIKE ?', whereArgs: ['cust_sample_%']);
+
     final sampleCustomers = [
-      Customer(
-        name: 'John Doe',
-        businessName: 'Doe Enterprises',
-        phone: '0912345678',
-        email: 'john.doe@example.com',
-        localId: '',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Customer(
-        name: 'Jane Smith',
-        businessName: 'Smith LLC',
-        phone: '0987654321',
-        email: 'jane.smith@example.com',
-        localId: '',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
+      {
+        'local_id': 'cust_sample_1',
+        'name': 'Abebe Kebede',
+        'phone': '+251911001100',
+        'current_balance': 0.0,
+        'credit_limit': 1000.0,
+        'is_active': 1,
+        'created_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      {
+        'local_id': 'cust_sample_2',
+        'name': 'Marta Solomon',
+        'phone': '+251922002200',
+        'current_balance': 500.0,
+        'credit_limit': 2000.0,
+        'is_active': 1,
+        'created_at': DateTime.now().millisecondsSinceEpoch,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      // Add more sample customers...
     ];
 
-    for (var customer in sampleCustomers) {
-      await db.insert(
-        customerTable,
-        customer.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+    final batch = db.batch();
+    for (final customer in sampleCustomers) {
+      batch.insert('customers', customer);
     }
+    await batch.commit();
   }
 
   Future<List<Customer>> getAllCustomers({bool activeOnly = true}) async {

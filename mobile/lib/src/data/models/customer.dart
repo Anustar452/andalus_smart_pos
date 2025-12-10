@@ -115,8 +115,9 @@ class Customer {
   String get balanceStatus {
     if (currentBalance == 0) return 'Paid';
     if (isOverdue) return 'Overdue: ETB ${currentBalance.toStringAsFixed(2)}';
-    if (currentBalance > 0)
+    if (currentBalance > 0) {
       return 'Owes: ETB ${currentBalance.toStringAsFixed(2)}';
+    }
     return 'Credit: ETB ${(-currentBalance).toStringAsFixed(2)}';
   }
 
@@ -169,6 +170,88 @@ class Customer {
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  factory Customer.createSample() {
+    return Customer(
+      localId: 'cust_sample_${DateTime.now().millisecondsSinceEpoch}',
+      name: 'Sample Customer',
+      businessName: 'Sample Business',
+      phone: '+251911223344',
+      whatsappNumber: '+251911223344',
+      email: 'sample@email.com',
+      address: 'Addis Ababa, Ethiopia',
+      tinNumber: '1234567890',
+      creditLimit: 1000.0,
+      currentBalance: 250.0,
+      dueDate: DateTime.now().add(const Duration(days: 30)),
+      allowCredit: true,
+      paymentTerms: '30',
+      notes: 'Sample customer for testing',
+      isActive: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  factory Customer.createSampleWithIndex(int index) {
+    final customers = [
+      {
+        'name': 'Abebe Kebede',
+        'business': 'Abebe Store',
+        'phone': '+251911001100',
+        'balance': 0.0
+      },
+      {
+        'name': 'Marta Solomon',
+        'business': 'Marta Trading',
+        'phone': '+251922002200',
+        'balance': 500.0
+      },
+      {
+        'name': 'Tesfaye Hailu',
+        'business': 'Tesfaye Shop',
+        'phone': '+251933003300',
+        'balance': 1200.0
+      },
+      {
+        'name': 'Hana Michael',
+        'business': 'Hana Retail',
+        'phone': '+251944004400',
+        'balance': 0.0
+      },
+      {
+        'name': 'Dawit Asrat',
+        'business': 'Dawit Wholesale',
+        'phone': '+251955005500',
+        'balance': 750.0
+      },
+    ];
+
+    final customerData = customers[index % customers.length];
+    final hasBalance = (customerData['balance'] as double) > 0;
+
+    return Customer(
+      localId: 'cust_sample_${DateTime.now().millisecondsSinceEpoch}_$index',
+      name: customerData['name'] as String,
+      businessName: customerData['business'] as String,
+      phone: customerData['phone'] as String,
+      whatsappNumber: customerData['phone'] as String,
+      email: 'customer${index + 1}@email.com',
+      address: 'Addis Ababa, Ethiopia',
+      tinNumber: 'TIN${index.toString().padLeft(7, '0')}',
+      creditLimit: 2000.0,
+      currentBalance: customerData['balance'] as double,
+      dueDate: hasBalance
+          ? DateTime.now().add(Duration(days: 30 - (index * 5)))
+          : null,
+      allowCredit: true,
+      paymentTerms: '30',
+      notes: 'Regular customer',
+      isActive: true,
+      createdAt: DateTime.now().subtract(Duration(days: index * 10)),
+      updatedAt: DateTime.now(),
     );
   }
 }
