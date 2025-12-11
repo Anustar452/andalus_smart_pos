@@ -7,18 +7,15 @@ A mobile-first Point of Sale application for Ethiopian shops, built with Flutter
 - 📱 Mobile-first POS with large touch targets
 - 📴 Offline-first with SQLite local database
 - 🔄 Background sync to Laravel backend
-  <<<<<<< HEAD
+
 - # 💳 Telebirr, cash, and other payment integration, CBE, and other banks support, payment integration
 - 💳 Telebirr, cash, and other payment integration, CBE, and other banks support, payment integration
-  > > > > > > > 0bf26c0 (Read me filled)
 - 🔔 FCM push notifications
 - 🌐 Multilingual (English + Amharic)
 - 🔒 Secure token storage
 - business targeting for making this Ethiopian developer from 0 to wealthy
-  <<<<<<< HEAD
-  =======
 
-> > > > > > > 0bf26c0 (Read me filled)
+  =======
 
 ## Tech Stack
 
@@ -39,7 +36,7 @@ A mobile-first Point of Sale application for Ethiopian shops, built with Flutter
 
 ## Mobile app Code Review Snippets
 
-<<<<<<< HEAD
+```
 //TODO: GENERATED FILE, DO NOT EDIT. for coloring and theming purposes only.
 //lib/src/config/theme/color_schemes.g.dart
 import 'package:flutter/material.dart';
@@ -108,7 +105,9 @@ shadow: Color(0xFF000000),
 surfaceTint: Color(0xFF8BD9B5),
 );
 
-##// src/config/theme/app_theme.dart
+##
+
+// src/config/theme/app_theme.dart
 // App theme configuration using generated color schemes and font themes.
 import 'package:andalus_smart_pos/src/config/theme/color_schemes.g.dart';
 import 'package:flutter/material.dart';
@@ -6194,10 +6193,10 @@ final db = await \_db;
 try {
 final maps = await db.rawQuery('''
 SELECT p.\*, c.name as category_name
-FROM $productTable p 
-        LEFT JOIN product_categories c ON p.category_id = c.category_id 
-        WHERE (p.name LIKE ? OR p.name_am LIKE ? OR p.barcode LIKE ? OR p.sku LIKE ?) 
-        AND p.is_active = 1 
+FROM $productTable p
+        LEFT JOIN product_categories c ON p.category_id = c.category_id
+        WHERE (p.name LIKE ? OR p.name_am LIKE ? OR p.barcode LIKE ? OR p.sku LIKE ?)
+        AND p.is_active = 1
         ORDER BY p.name
       ''', ['%$query%', '%$query%', '%$query%', '%$query%']);
 return maps.map((map) => Product.fromMap(map)).toList();
@@ -35198,5 +35197,6 @@ print('App initialization error: $e');
 
 runApp(const ProviderScope(child: AndalusApp()));
 }
+```
 
 =======
