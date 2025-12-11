@@ -1,4 +1,6 @@
 // lib/src/widgets/reports/advanced_product_analytics.dart
+// Advanced product analytics widget displaying detailed product performance metrics.
+// This includes ABC analysis and profit margin distribution charts.
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';

@@ -1,4 +1,5 @@
-// src/data/repositories/customer_repository.dart
+// mobile/lib/src/data/repositories/customer_repository.dart
+// Repository for managing customer data and credit operations in the local database.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
 import '../local/database.dart';

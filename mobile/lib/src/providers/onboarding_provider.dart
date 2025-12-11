@@ -1,4 +1,5 @@
-// src/providers/onboarding_provider.dart
+// mobile/lib/src/providers/onboarding_provider.dart
+// Provider for managing the onboarding and registration process.
 import 'dart:async';
 
 import 'package:andalus_smart_pos/src/providers/auth_provider.dart';

@@ -1,4 +1,5 @@
 // lib/src/widgets/common/search_field.dart
+// A reusable search field widget with customizable hint text and callbacks.
 import 'package:flutter/material.dart';
 
 class SearchField extends StatelessWidget {

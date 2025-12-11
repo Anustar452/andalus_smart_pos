@@ -1,4 +1,6 @@
-// src/data/models/settings.dart
+// mobile/lib/src/data/models/settings.dart
+// Model representing application settings for the POS system. includes new settings for credit system and stock notifications.
+//dark mode language selection currency selection calander format etc can be selected from
 class AppSettings {
   final String shopName;
   final String shopNameAm;

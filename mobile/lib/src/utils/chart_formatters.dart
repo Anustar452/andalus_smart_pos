@@ -1,4 +1,5 @@
 // lib/src/utils/chart_formatters.dart
+// Utility class for formatting numbers in charts, including currency and percentage formats.
 import 'package:intl/intl.dart';
 
 class ChartFormatters {

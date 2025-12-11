@@ -1,4 +1,5 @@
 // src/ui/screens/onboarding/onboarding_otp_verification_screen.dart
+// Screen for OTP verification during the onboarding process.
 import 'dart:async';
 
 import 'package:andalus_smart_pos/src/widgets/common/app_button.dart';

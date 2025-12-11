@@ -1,3 +1,5 @@
+// lib/src/utils/database_init.dart
+// Utility for initializing the database with default data such as business profile and admin user.
 import 'package:andalus_smart_pos/src/data/local/database.dart';
 import 'package:andalus_smart_pos/src/data/models/user.dart';
 import 'package:crypto/crypto.dart';

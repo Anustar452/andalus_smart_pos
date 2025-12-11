@@ -1,4 +1,5 @@
 // src/ui/screens/onboarding/onboarding_screen.dart
+// Onboarding screen that manages the multi-step onboarding process.
 import 'package:andalus_smart_pos/src/ui/screens/onboarding/onboarding_otp_verification_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

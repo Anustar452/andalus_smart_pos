@@ -1,4 +1,5 @@
-// src/data/models/credit_transaction.dart
+// mobile/lib/src/data/models/credit_transaction.dart
+// Model representing a credit transaction for a customer.
 import 'package:flutter/material.dart';
 
 class CreditTransaction {

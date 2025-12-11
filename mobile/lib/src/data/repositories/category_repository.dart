@@ -1,3 +1,5 @@
+// mobile/lib/src/data/repositories/category_repository.dart
+// Repository for managing product categories in the local database.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
 import '../local/database.dart';

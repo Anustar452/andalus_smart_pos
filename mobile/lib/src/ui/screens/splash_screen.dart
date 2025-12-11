@@ -1,3 +1,8 @@
+// lib/src/ui/screens/splash_screen.dart
+// Splash screen with animated logo and initial setup flow for language and theme selection.
+// After setup, navigates to authentication or main app screen.
+// Implements smooth animations and responsive design.
+
 import 'package:andalus_smart_pos/src/providers/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

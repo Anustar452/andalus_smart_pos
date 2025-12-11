@@ -1,3 +1,5 @@
+// mobile/lib/src/widgets/dashboard/stock_alert_widget.dart
+// A stock alert widget that notifies about low stock products on the dashboard.
 import 'package:flutter/material.dart';
 import 'package:andalus_smart_pos/src/data/models/product.dart';
 import 'package:andalus_smart_pos/src/localization/app_localizations.dart';

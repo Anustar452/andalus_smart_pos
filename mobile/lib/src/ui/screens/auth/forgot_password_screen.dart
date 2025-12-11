@@ -1,4 +1,5 @@
 // lib/src/ui/screens/auth/forgot_password_screen.dart
+// Screen for handling the "Forgot Password" functionality.
 import 'package:andalus_smart_pos/src/widgets/common/app_button.dart';
 import 'package:andalus_smart_pos/src/widgets/common/app_text_field.dart';
 import 'package:flutter/material.dart';

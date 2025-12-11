@@ -1,4 +1,5 @@
 // src/ui/screens/onboarding/shop_registration_screen.dart
+// Screen for registering the shop during the onboarding process.
 import 'package:andalus_smart_pos/src/data/models/business.dart';
 import 'package:andalus_smart_pos/src/widgets/common/app_button.dart';
 import 'package:andalus_smart_pos/src/widgets/common/app_text_field.dart';

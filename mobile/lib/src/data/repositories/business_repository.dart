@@ -1,4 +1,5 @@
-//src/data/repositories/business_repository.dart
+//mobile/lib/src/data/repositories/business_repository.dart
+// Repository for managing business profile data in the local database. we aill make it managable business information like shop name address contact details logo etc. in the laravel backend.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
 import '../local/database.dart';

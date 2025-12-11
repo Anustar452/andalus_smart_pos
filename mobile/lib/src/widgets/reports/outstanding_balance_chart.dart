@@ -1,4 +1,6 @@
 // lib/src/widgets/reports/outstanding_balance_chart.dart
+// Outstanding balance chart widget displaying analysis of customer balances.
+// This includes a breakdown of outstanding balances by range.
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';

@@ -1,4 +1,5 @@
 //src/providers/settings_provider.dart
+// Provider for managing application settings.
 import 'package:andalus_smart_pos/src/data/models/settings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';

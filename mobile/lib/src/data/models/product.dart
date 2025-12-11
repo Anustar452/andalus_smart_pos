@@ -1,4 +1,5 @@
 // lib/src/data/models/product.dart
+// Model representing a product in the POS system.
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';

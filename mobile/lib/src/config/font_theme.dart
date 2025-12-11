@@ -1,4 +1,5 @@
 // src/config/theme/font_theme.dart
+// Font theme configuration for the application.
 class FontTheme {
   final AppFontFamily englishFont;
   final AppFontFamily amharicFont;

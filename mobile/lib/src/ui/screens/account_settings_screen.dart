@@ -1,4 +1,5 @@
-//src/ui/screens/account_setting_screen.dart
+// src/ui/screens/account_setting_screen.dart
+// Account settings screen for viewing and updating user profile, preferences, and security settings.
 import 'package:andalus_smart_pos/src/config/app_theme.dart';
 import 'package:andalus_smart_pos/src/config/font_theme.dart';
 import 'package:andalus_smart_pos/src/utils/date_utils.dart';

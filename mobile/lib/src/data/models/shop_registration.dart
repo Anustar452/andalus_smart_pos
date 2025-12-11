@@ -1,4 +1,5 @@
-// src/data/models/shop_registration.dart
+// mobile/lib/src/data/models/shop_registration.dart
+// Model representing shop registration data. and owner registration data.
 class ShopRegistration {
   final String shopName;
   final String shopCategory;

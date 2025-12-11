@@ -1,4 +1,6 @@
 // lib/src/widgets/reports/financial_report_section.dart
+// Financial report section widget displaying key financial metrics and charts.
+// This includes financial KPIs, profit margin trends, and cash flow analysis.
 import 'package:andalus_smart_pos/src/utils/chart_formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

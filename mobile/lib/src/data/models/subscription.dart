@@ -1,4 +1,5 @@
-//src/data/models/subscription.dart
+// mobile/lib/src/data/models/subscription.dart
+// Model representing a subscription in the POS system.
 class Subscription {
   final String id;
   final String businessId;

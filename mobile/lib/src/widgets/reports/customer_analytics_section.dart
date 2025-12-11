@@ -1,4 +1,6 @@
 // lib/src/widgets/reports/customer_analytics_section.dart
+// Customer analytics widget displaying customer behavior and lifetime value metrics.
+// This includes customer lifetime value and churn risk analysis charts.
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../../localization/app_localizations.dart';

@@ -1,5 +1,5 @@
 //lib/src/ui/screens/main_navigation.dart
-
+// Main navigation screen with bottom navigation bar for primary app sections.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/localization/app_localizations.dart';

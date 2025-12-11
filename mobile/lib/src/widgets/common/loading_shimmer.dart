@@ -1,3 +1,5 @@
+// lib/src/widgets/common/loading_shimmer.dart
+// A customizable loading shimmer widget for indicating loading states in the UI.
 import 'package:flutter/material.dart';
 
 class LoadingShimmer extends StatelessWidget {

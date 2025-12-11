@@ -1,4 +1,6 @@
-// lib/src/data/repositories/otp_repository.dart
+// mobile/lib/src/data/repositories/otp_repository.dart
+// Repository for managing OTPs in the local database.
+
 import 'package:andalus_smart_pos/src/data/local/database.dart';
 import 'package:andalus_smart_pos/src/data/models/otp.dart';
 

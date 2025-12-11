@@ -1,4 +1,5 @@
 // src/ui/screens/onboarding/payment_screen.dart
+// Screen for handling payment during the onboarding process.
 import 'package:andalus_smart_pos/src/ui/screens/main_navigation.dart';
 import 'package:andalus_smart_pos/src/widgets/common/app_button.dart';
 import 'package:flutter/material.dart';

@@ -1,4 +1,6 @@
 // src/utils/calendar_utils.dart
+// Utility functions and state management for handling Gregorian and Ethiopian calendars,
+// including date conversions, formatting, and user preferences.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';

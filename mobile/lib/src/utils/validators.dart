@@ -1,4 +1,5 @@
 // lib/src/utils/validators.dart
+// Utility class for validating various input fields such as product details, customer information, and sales data.
 import 'package:intl/intl.dart';
 
 class Validators {

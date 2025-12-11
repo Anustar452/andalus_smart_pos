@@ -1,4 +1,5 @@
 // src/service/registration_service.dart
+// Service for handling user and shop registration logic.
 import 'package:andalus_smart_pos/src/data/models/registration.dart';
 import 'package:andalus_smart_pos/src/data/repositories/subscription_repository.dart';
 import 'package:andalus_smart_pos/src/data/repositories/user_repository.dart';

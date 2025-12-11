@@ -1,3 +1,5 @@
+// mobile/lib/src/widgets/dashboard/recent_sales_list.dart
+// A recent sales list widget displaying the latest sales transactions on the dashboard.
 import 'package:flutter/material.dart';
 import 'package:andalus_smart_pos/src/data/models/sale.dart';
 import 'package:andalus_smart_pos/src/utils/date_utils.dart';

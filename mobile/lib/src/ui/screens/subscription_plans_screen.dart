@@ -1,4 +1,5 @@
 // ui/screens/subscription_plans_screen.dart
+// Screen for displaying and managing subscription plans.
 import 'package:andalus_smart_pos/src/widgets/common/custom_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

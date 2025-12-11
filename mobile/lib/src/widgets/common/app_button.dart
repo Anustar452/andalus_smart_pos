@@ -1,4 +1,5 @@
 // src/ui/widgets/app_button.dart
+// A reusable button widget with loading state and multiple styles (primary, secondary, outlined).
 import 'package:flutter/material.dart';
 
 class AppButton extends StatelessWidget {

@@ -1,3 +1,5 @@
+// lib/src/ui/screens/sales_history_screen.dart
+// Screen for viewing and managing sales history, including filtering, analytics, and detailed sale information.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/data/repositories/sale_repository.dart';

@@ -1,4 +1,5 @@
 // lib/src/ui/screens/pos_screen.dart
+// Point of Sale (POS) screen for managing product sales, cart, and printing receipts.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/data/models/customer.dart';

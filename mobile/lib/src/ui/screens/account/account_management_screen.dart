@@ -1,3 +1,5 @@
+//src/ui/screens/account/account_management_screen.dart
+// Screen for managing user account settings.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/localization/app_localizations.dart';

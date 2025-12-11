@@ -1,4 +1,5 @@
 // lib/src/widgets/reports/sales_overview_card.dart
+// Sales overview card widget displaying key sales metrics.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../localization/app_localizations.dart';

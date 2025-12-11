@@ -1,4 +1,5 @@
-//lib/src/data/models/sale_item.dart
+// mobile/lib/src/data/models/sale_item.dart
+// Model representing an item in a sale transaction.
 class SaleItem {
   final int? id;
   final String saleId;

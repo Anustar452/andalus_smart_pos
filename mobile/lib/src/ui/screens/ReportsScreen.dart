@@ -1,4 +1,5 @@
 // lib/src/ui/screens/reports_screen.dart
+// Screen for viewing detailed reports and analytics on sales, products, customers, and financials.
 import 'package:andalus_smart_pos/src/data/models/subscription.dart';
 import 'package:andalus_smart_pos/src/utils/reports_data_calculator.dart';
 import 'package:andalus_smart_pos/src/widgets/reports/advanced_product_analytics.dart';

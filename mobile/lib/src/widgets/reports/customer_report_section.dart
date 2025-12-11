@@ -1,4 +1,6 @@
 // lib/src/widgets/reports/customer_report_section.dart
+// Customer report section widget displaying key customer metrics and charts.
+// This includes overview stats, top customers, and outstanding balance analysis.
 import 'package:andalus_smart_pos/src/data/models/subscription.dart';
 import 'package:andalus_smart_pos/src/utils/chart_formatters.dart';
 import 'package:flutter/material.dart';

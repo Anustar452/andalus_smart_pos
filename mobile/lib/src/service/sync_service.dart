@@ -1,4 +1,5 @@
 // lib/src/services/sync_service.dart
+// Service for synchronizing local data with the remote server.
 import 'dart:async';
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';

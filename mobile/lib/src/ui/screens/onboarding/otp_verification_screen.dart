@@ -1,4 +1,5 @@
 // src/ui/screens/auth/otp_verification_screen.dart
+// Screen for OTP verification during registration or login.
 import 'dart:async';
 
 import 'package:andalus_smart_pos/src/widgets/common/app_button.dart';

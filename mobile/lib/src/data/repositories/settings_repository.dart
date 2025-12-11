@@ -1,4 +1,6 @@
-// src/data/repositories/settings_repository.dart
+// mobile/lib/src/data/repositories/settings_repository.dart
+// Repository for managing application settings using SharedPreferences.
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/settings.dart';

@@ -1,4 +1,4 @@
-// lib/src/data/models/sale.dart
+// mobile/lib/src/data/models/sale.dart
 import 'dart:convert';
 import 'package:andalus_smart_pos/src/data/models/sale_item.dart';
 import 'package:crypto/crypto.dart';

@@ -1,4 +1,5 @@
 // mobile/lib/src/providers/cart_provider.dart
+// Provider for managing the shopping cart state.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/data/models/cart_item.dart';
 

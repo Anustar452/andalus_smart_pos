@@ -1,3 +1,7 @@
+// mobile/lib/src/data/models/category.dart
+// Model representing a product category.
+// Includes sample categories for different business types.
+// later on we can extend this to support hierarchical categories if needed. and supporting different business types with default categories
 class ProductCategory {
   final int? id;
   final String categoryId;

@@ -1,4 +1,5 @@
 // src/providers/auth_provider.dart
+// Provider for managing authentication state and actions.
 import 'package:andalus_smart_pos/src/data/local/database.dart';
 import 'package:andalus_smart_pos/src/service/auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

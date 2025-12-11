@@ -1,4 +1,5 @@
 // lib/src/widgets/reports/products_overview_card.dart
+// Products overview card widget displaying key product metrics.
 import 'package:flutter/material.dart';
 import '../../localization/app_localizations.dart';
 import '../../utils/formatters.dart';

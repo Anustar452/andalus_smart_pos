@@ -1,4 +1,5 @@
 // src/config/theme/app_theme.dart
+// App theme configuration using generated color schemes and font themes.
 import 'package:andalus_smart_pos/src/config/theme/color_schemes.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

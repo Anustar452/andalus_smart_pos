@@ -1,4 +1,5 @@
 // src/ui/widgets/app_text_field.dart
+// A reusable text field widget with various customization options.
 import 'package:flutter/material.dart';
 
 class AppTextField extends StatelessWidget {

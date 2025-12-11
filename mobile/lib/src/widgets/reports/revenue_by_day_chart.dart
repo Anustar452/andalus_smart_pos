@@ -1,4 +1,6 @@
 // lib/src/widgets/reports/revenue_by_day_chart.dart
+// Revenue by day chart widget displaying daily revenue trends.
+// This includes a bar chart visualizing revenue for each day of the week.
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:intl/intl.dart';

@@ -1,3 +1,5 @@
+// src/ui/screens/business_registration_screen.dart
+// Screen for registering a business during the onboarding process.
 import 'package:andalus_smart_pos/src/data/models/category.dart';
 import 'package:andalus_smart_pos/src/data/repositories/category_repository.dart';
 import 'package:flutter/material.dart';

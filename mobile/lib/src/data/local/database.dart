@@ -1,4 +1,6 @@
-//src/data/local/database.dart
+// mobile/lib/src/data/local/database.dart
+// my question here for deepseek ai is for optimizing the following for making this app not crushy fast and reliable applying best practices for flutter sqflite database management and  stll keeping all the existing functionalities and migrations
+// and also adding any missing functionalities that are important for a pos app database management feasible to the back end laravel api design
 import 'package:andalus_smart_pos/src/data/models/otp.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -14,6 +16,13 @@ class AppDatabase {
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
+  }
+
+  static Future<void> _createIndexes(Database db) async {
+    await db.execute('CREATE INDEX idx_sales_created ON sales(created_at)');
+    await db
+        .execute('CREATE INDEX idx_products_category ON products(category_id)');
+    await db.execute('CREATE INDEX idx_customers_phone ON customers(phone)');
   }
 
   static Future<Database> _initDatabase() async {

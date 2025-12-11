@@ -1,4 +1,5 @@
 // src/service/auth_service.dart
+// Service for handling authentication logic.
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:andalus_smart_pos/src/data/repositories/user_repository.dart';

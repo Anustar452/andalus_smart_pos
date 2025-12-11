@@ -1,4 +1,6 @@
 // widgets/common/date_range_picker.dart
+// A date range picker widget that supports both Gregorian and Ethiopian calendars,
+// allowing users to select a date range with proper formatting and validation.åå
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/providers/calendar_provider.dart';

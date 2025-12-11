@@ -1,4 +1,5 @@
 // lib/src/controllers/customer_controller.dart
+// Controller for managing customer-related state and actions.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/customer.dart';
 import '../data/repositories/customer_repository.dart';

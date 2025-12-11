@@ -1,4 +1,5 @@
 // mobile/lib/src/app.dart
+// Main application widget for Andalus Smart POS.
 import 'package:andalus_smart_pos/src/ui/screens/ReportsScreen.dart';
 import 'package:andalus_smart_pos/src/ui/screens/auth/registration_screen.dart';
 import 'package:andalus_smart_pos/src/ui/screens/customer_management_screen.dart';

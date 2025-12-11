@@ -1,4 +1,5 @@
 // lib/src/controllers/product_controller.dart
+// Controller for managing product-related state and actions.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/product.dart';
 import '../data/repositories/product_repository.dart';

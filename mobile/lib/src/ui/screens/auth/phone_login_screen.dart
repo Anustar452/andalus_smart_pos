@@ -1,4 +1,5 @@
 // lib/src/ui/screens/auth/phone_login_screen.dart
+// Screen for phone number and password login.
 import 'package:andalus_smart_pos/src/widgets/common/app_button.dart';
 import 'package:andalus_smart_pos/src/widgets/common/app_text_field.dart';
 import 'package:flutter/material.dart';

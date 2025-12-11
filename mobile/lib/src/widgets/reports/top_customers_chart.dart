@@ -1,4 +1,5 @@
 // lib/src/widgets/reports/top_customers_chart.dart
+// Top customers chart widget displaying the highest spending customers.
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:intl/intl.dart';

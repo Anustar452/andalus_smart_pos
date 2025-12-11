@@ -1,4 +1,5 @@
 // src/ui/screens/onboarding/owner_registration_screen.dart
+// Screen for registering the owner during the onboarding process.
 import 'package:andalus_smart_pos/src/widgets/common/app_button.dart';
 import 'package:andalus_smart_pos/src/widgets/common/app_text_field.dart';
 import 'package:flutter/material.dart';

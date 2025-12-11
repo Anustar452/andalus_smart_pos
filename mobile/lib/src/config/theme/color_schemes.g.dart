@@ -1,4 +1,5 @@
 //lib/src/config/theme/color_schemes.g.dart
+//TODO: GENERATED FILE, DO NOT EDIT. for coloring and theming purposes only.
 import 'package:flutter/material.dart';
 
 const lightColorScheme = ColorScheme(

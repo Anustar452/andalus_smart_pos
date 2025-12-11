@@ -1,4 +1,5 @@
 // utils/sync_manager.dart
+// Utility class for managing data synchronization between local database and remote server.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'package:sqflite/sqflite.dart';

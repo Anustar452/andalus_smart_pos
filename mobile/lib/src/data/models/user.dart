@@ -1,4 +1,5 @@
-//src/data/models/user.dart
+// mobile/lib/src/data/models/user.dart
+// Model representing a user in the POS system. example roles: owner manager cashier
 class User {
   final String id;
   final String? email;

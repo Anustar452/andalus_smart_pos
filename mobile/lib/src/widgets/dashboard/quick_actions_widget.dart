@@ -1,3 +1,5 @@
+// mobile/lib/src/widgets/dashboard/quick_actions_widget.dart
+// A quick actions widget providing shortcuts to common tasks on the dashboard.
 import 'package:flutter/material.dart';
 import 'package:andalus_smart_pos/src/localization/app_localizations.dart';
 

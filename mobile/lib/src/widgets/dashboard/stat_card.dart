@@ -1,3 +1,5 @@
+// mobile/lib/src/widgets/dashboard/stat_card.dart
+// A reusable stat card widget for displaying key statistics on the dashboard.
 import 'package:flutter/material.dart';
 import 'package:andalus_smart_pos/src/localization/app_localizations.dart';
 

@@ -1,3 +1,5 @@
+// src/ui/screens/category_management_screen.dart
+// Screen for managing product categories including viewing, searching, adding, editing, and toggling active
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/data/models/category.dart';

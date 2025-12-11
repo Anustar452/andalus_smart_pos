@@ -1,3 +1,5 @@
+// lib/src/ui/screens/product_management_screen.dart
+// Screen for managing products including viewing, searching, adding, editing, and filtering.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/data/models/product.dart';

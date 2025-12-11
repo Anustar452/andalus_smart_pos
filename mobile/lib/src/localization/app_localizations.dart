@@ -1,4 +1,6 @@
 //src/localization/app_localizations.dart
+// Localization class for managing localized strings in the application.
+//ensure to import necessary packages and add skipped terms from other files
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';

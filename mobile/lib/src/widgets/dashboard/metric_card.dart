@@ -1,3 +1,5 @@
+// mobile/lib/src/widgets/dashboard/metric_card.dart
+// A reusable metric card widget for displaying key performance indicators on the dashboard.
 import 'package:flutter/material.dart';
 import 'package:andalus_smart_pos/src/localization/app_localizations.dart';
 

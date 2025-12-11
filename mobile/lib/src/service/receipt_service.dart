@@ -1,4 +1,5 @@
 // lib/src/services/receipt_service.dart
+// Service for generating and printing sales receipt PDFs.
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

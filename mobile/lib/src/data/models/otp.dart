@@ -1,4 +1,5 @@
-//src/data/models/otp.dart
+// mobile/lib/src/data/models/otp.dart
+// Model representing a One-Time Password (OTP) used for authentication and verification. used on registration login password reset and phone verification
 class OTP {
   final String id;
   final String phone;

@@ -1,3 +1,5 @@
+// src/ui/widgets/common/custom_card.dart
+// A customizable card widget with tap and long-press functionality, padding, margin, and styling
 import 'package:flutter/material.dart';
 
 class CustomCard extends StatelessWidget {

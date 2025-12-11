@@ -1,4 +1,5 @@
 // src/ui/screens/onboarding/subscription_selection_screen.dart
+// Screen for selecting a subscription plan during the onboarding process.
 import 'package:andalus_smart_pos/src/widgets/common/app_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

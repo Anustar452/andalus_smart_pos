@@ -1,4 +1,6 @@
 // lib/src/widgets/reports/advanced_sales_charts.dart
+// Advanced sales analytics widget displaying detailed sales performance metrics.
+// This includes sales velocity and customer retention charts.
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../../localization/app_localizations.dart';

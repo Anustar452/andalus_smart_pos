@@ -1,4 +1,5 @@
 // lib/src/widgets/reports/customers_overview_card.dart
+// Customers overview card widget displaying key customer metrics.
 import 'package:flutter/material.dart';
 import '../../localization/app_localizations.dart';
 import '../../utils/formatters.dart';

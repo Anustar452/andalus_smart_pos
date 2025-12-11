@@ -1,4 +1,6 @@
 // lib/src/utils/print_service.dart
+// Service for managing Bluetooth printer connections and printing receipts using ESC/POS commands.
+// Supports scanning for printers, connecting, and printing formatted receipts.
 import 'package:andalus_smart_pos/src/data/models/sale.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';

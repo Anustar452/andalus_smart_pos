@@ -1,4 +1,5 @@
 // mobile/lib/main.dart
+// Main entry point for Andalus Smart POS application.
 import 'dart:ui';
 
 import 'package:andalus_smart_pos/src/data/local/database.dart';
@@ -24,7 +25,6 @@ void main() async {
     await AppDatabase.verifyOTPTable();
     await AppDatabase.migrateSalesTable();
     await DatabaseInitializer.initializeDefaultData();
-
     print('App initialization completed successfully');
   } catch (e) {
     print('App initialization error: $e');

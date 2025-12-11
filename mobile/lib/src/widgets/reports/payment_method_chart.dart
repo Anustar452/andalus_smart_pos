@@ -1,4 +1,6 @@
 // lib/src/widgets/reports/payment_method_chart.dart
+// Payment method chart widget displaying sales distribution by payment methods.
+// This includes a doughnut chart visualizing the breakdown of sales by different payment types.
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../../localization/app_localizations.dart';

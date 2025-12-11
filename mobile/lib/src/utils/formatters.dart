@@ -1,4 +1,6 @@
 // lib/src/utils/formatters.dart
+// Utility class for various formatting needs across the app,
+
 import 'package:intl/intl.dart';
 
 class AppFormatters {

@@ -1,4 +1,6 @@
 // lib/src/widgets/reports/inventory_analysis_section.dart
+// Inventory analysis section widget displaying key inventory metrics and charts.
+// This includes inventory turnover ratios and stock aging analysis.
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../../localization/app_localizations.dart';

@@ -1,4 +1,5 @@
-// src/data/models/customer.dart
+// mobile/lib/src/data/models/customer.dart
+// Model representing a customer in the POS system.
 class Customer {
   final int? id;
   final String localId;

@@ -1,4 +1,5 @@
 // lib/src/widgets/reports/top_products_chart.dart
+// Top products chart widget displaying the highest revenue-generating products.
 import 'package:andalus_smart_pos/src/utils/chart_formatters.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';

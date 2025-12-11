@@ -1,4 +1,5 @@
 // widgets/dashboard/dashboard_cards.dart
+// Dashboard cards displaying key metrics like sales, products, customers, and revenue.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/localization/app_localizations.dart';

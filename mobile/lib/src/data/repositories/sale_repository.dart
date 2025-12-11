@@ -1,4 +1,5 @@
-// lib/src/data/repositories/sale_repository.dart
+// mobile/lib/src/data/repositories/sale_repository.dart
+// Repository for managing sale data in the local database.
 import 'package:flutter/src/material/date.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';

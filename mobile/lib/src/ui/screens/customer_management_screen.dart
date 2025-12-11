@@ -1,3 +1,5 @@
+// src/ui/screens/customer_detail_screen.dart
+//
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/data/models/customer.dart';

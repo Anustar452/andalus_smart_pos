@@ -1,4 +1,5 @@
-//src/data/repositories/user_repository.dart
+// mobile/lib/src/data/repositories/user_repository.dart
+// Repository for managing user data in the local database.
 import 'package:andalus_smart_pos/src/data/local/database.dart';
 import 'package:andalus_smart_pos/src/data/models/user.dart';
 

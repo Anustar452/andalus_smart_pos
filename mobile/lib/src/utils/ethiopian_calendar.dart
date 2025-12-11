@@ -1,4 +1,8 @@
 // utils/ethiopian_calendar.dart
+// Utility class for Ethiopian calendar conversions and date handling.
+// Provides functions to convert between Gregorian and Ethiopian dates,
+// check leap years, and format Ethiopian dates.
+
 class EthiopianCalendar {
   // Accurate Ethiopian calendar conversion constants
   static const int ETHIOPIAN_YEAR_OFFSET = 8;

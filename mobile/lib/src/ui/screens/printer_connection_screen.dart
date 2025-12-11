@@ -1,4 +1,5 @@
 // lib/src/ui/screens/printer_connection_screen.dart
+// Screen for connecting to and managing Bluetooth printers.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';

@@ -1,4 +1,5 @@
 // lib/src/widgets/reports/subscription_info_card.dart
+// Subscription info card widget displaying current subscription plan details.
 import 'package:flutter/material.dart';
 import '../../localization/app_localizations.dart';
 import '../../data/models/subscription.dart';

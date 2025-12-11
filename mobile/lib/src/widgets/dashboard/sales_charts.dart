@@ -1,3 +1,5 @@
+// mobile/lib/src/widgets/dashboard/sales_charts.dart
+// A sales analytics widget displaying sales data with charts and statistics on the dashboard.
 import 'package:andalus_smart_pos/src/data/repositories/sale_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:andalus_smart_pos/src/data/models/sale.dart';

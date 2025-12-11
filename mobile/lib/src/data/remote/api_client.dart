@@ -1,4 +1,5 @@
-//lib/src/data/remote/api_client.dart
+//mobile/lib/src/data/remote/api_client.dart
+// API client for interacting with the backend server. laravel backend.
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';

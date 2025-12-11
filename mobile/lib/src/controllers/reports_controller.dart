@@ -1,4 +1,5 @@
 // lib/src/controllers/reports_controller.dart
+// Controller for managing reports-related state and actions.
 import 'package:andalus_smart_pos/src/ui/screens/ReportsScreen.dart';
 import 'package:andalus_smart_pos/src/utils/reports_data_calculator.dart';
 import 'package:flutter/material.dart';

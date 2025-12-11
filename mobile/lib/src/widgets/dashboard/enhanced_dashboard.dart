@@ -1,4 +1,5 @@
 // lib/src/widgets/dashboard/enhanced_dashboard.dart - SIMPLIFIED VERSION
+// An enhanced dashboard widget with tabs for overview, sales analytics, and performance metrics.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';

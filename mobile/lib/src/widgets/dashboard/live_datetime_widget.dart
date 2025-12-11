@@ -1,4 +1,6 @@
 // widgets/dashboard/live_datetime_widget.dart
+// A live date and time widget that displays the current date and time,
+// supporting both Gregorian and Ethiopian calendars with localization.
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

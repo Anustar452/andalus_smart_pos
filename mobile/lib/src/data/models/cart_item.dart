@@ -1,3 +1,5 @@
+// mobile/lib/src/data/models/cart_item.dart
+// Model representing an item in the shopping cart.
 class CartItem {
   final int productId;
   final String productName;

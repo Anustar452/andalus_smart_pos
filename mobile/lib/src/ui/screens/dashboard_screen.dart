@@ -1,4 +1,6 @@
 //lib/src/ui/screens/dashboard_screen.dart
+// Dashboard screen displaying key metrics, charts, and recent activity.
+// i need professionnal modern content rich dashboard screen code secure responsive and optimized for performance code here as per best practices and expert guidelines.
 import 'package:andalus_smart_pos/src/data/models/customer.dart';
 import 'package:andalus_smart_pos/src/providers/language_provider.dart';
 import 'package:andalus_smart_pos/src/ui/screens/customer_management_screen.dart';

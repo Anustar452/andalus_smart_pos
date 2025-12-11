@@ -1,4 +1,5 @@
 // src/utils/date_utils.dart
+// Utility class for date and time formatting, conversions, and calculations,
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';

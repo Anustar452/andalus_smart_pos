@@ -1,4 +1,5 @@
 // lib/src/widgets/reports/financial_ratios_section.dart
+// Financial ratios widget displaying key financial metrics and break-even analysis charts.
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../../localization/app_localizations.dart';

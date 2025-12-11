@@ -1,4 +1,5 @@
 // src/providers/providers.dart
+// Provider definitions for repositories and services used in the application.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:andalus_smart_pos/src/data/repositories/user_repository.dart';
 import 'package:andalus_smart_pos/src/data/repositories/otp_repository.dart';

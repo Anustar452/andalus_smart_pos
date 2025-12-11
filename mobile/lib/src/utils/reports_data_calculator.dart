@@ -1,4 +1,13 @@
 // lib/src/utils/reports_data_calculator.dart
+// Utility class for calculating and generating various reports data
+// such as sales, products, customers, and financial summaries.
+// It processes data from repositories and applies business logic
+// based on the subscription plan to provide insights and analytics.
+// It supports advanced analytics for higher-tier subscription plans.
+// It is used by the ReportsController to fetch and prepare data for reporting screens.
+// It includes methods for filtering sales by date range, calculating top-selling products,
+// customer retention rates, inventory turnover, and financial metrics.
+// It returns structured data models for easy consumption by the UI.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/sale.dart';
